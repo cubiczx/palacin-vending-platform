@@ -1,0 +1,16 @@
+# Fuente de verdad: normaliza a LF en el repo independientemente
+# de la config local de git de cada desarrollador
+* text=auto eol=lf
+
+# Binarios explícitos - nunca tocar EOL
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Scripts que requieren LF sí o sí (evita fallos en contenedores Linux)
+*.sh text eol=lf
+Dockerfile text eol=lf
