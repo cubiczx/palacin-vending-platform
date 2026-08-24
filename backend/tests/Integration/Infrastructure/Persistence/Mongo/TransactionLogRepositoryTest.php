@@ -129,4 +129,15 @@ final class TransactionLogRepositoryTest extends KernelTestCase
             occurredAt: new DateTimeImmutable($at),
         ));
     }
+
+    public function testSearchWithPageBeyondResultsReturnsEmptyItems(): void
+    {
+        $this->recordEntry(ProductSku::SODA, '2026-08-24T10:00:00+00:00');
+        $this->dm->clear();
+
+        $result = $this->repository->search(new TransactionLogFilter(page: 99, perPage: 20));
+
+        self::assertSame(1, $result['total']);
+        self::assertSame([], $result['items']);
+    }
 }
