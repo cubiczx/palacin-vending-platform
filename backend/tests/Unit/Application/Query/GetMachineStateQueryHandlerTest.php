@@ -38,6 +38,7 @@ final class GetMachineStateQueryHandlerTest extends TestCase
         $view = $handler(new GetMachineStateQuery('machine-01'));
 
         $soda = current(array_filter($view->products, static fn ($p) => $p->sku === ProductSku::SODA));
+        self::assertNotFalse($soda);
 
         self::assertTrue($soda->inStock);
         self::assertFalse(property_exists($soda, 'stock'), 'customer-facing view must never expose exact stock counts');
@@ -52,6 +53,7 @@ final class GetMachineStateQueryHandlerTest extends TestCase
         $view = $handler(new GetMachineStateQuery('machine-01'));
 
         $soda = current(array_filter($view->products, static fn ($p) => $p->sku === ProductSku::SODA));
+        self::assertNotFalse($soda);
         self::assertFalse($soda->inStock);
     }
 

@@ -25,6 +25,8 @@ final class GetFullMachineStateQueryHandlerTest extends TestCase
         $soda = current(array_filter($view->products, static fn ($p) => $p->sku === ProductSku::SODA));
         $water = current(array_filter($view->products, static fn ($p) => $p->sku === ProductSku::WATER));
 
+        self::assertNotFalse($soda);
+        self::assertNotFalse($water);
         self::assertSame(3, $soda->stock);
         self::assertSame(7, $water->stock);
     }

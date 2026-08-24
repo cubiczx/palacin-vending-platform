@@ -64,7 +64,7 @@ final class GetTransactionHistoryQueryHandlerTest extends TestCase
             perPage: 10,
         ));
 
-        self::assertIsArray($result['items']);
-        self::assertIsInt($result['total']);
+        self::assertArrayHasKey('items', $result);
+        self::assertArrayHasKey('total', $result);
     }
 }
