@@ -13,4 +13,9 @@ final class ProductNotFoundException extends DomainException
     {
         return new self(sprintf('Product "%s" does not exist in this machine.', $sku->value));
     }
+
+    public static function forUnknownSku(string $sku): self
+    {
+        return new self(sprintf('"%s" is not a recognized product.', $sku));
+    }
 }

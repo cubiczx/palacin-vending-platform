@@ -20,6 +20,10 @@ class VendingMachineDocument
     #[ODM\Field(type: 'raw')]
     public array $changeInventory = [];
 
+    /** @var list<int> Coin values in cents, in insertion order */
+    #[ODM\Field(type: 'raw')]
+    public array $insertedCoins = [];
+
     #[ODM\Version]
     #[ODM\Field(type: 'int')]
     public int $version = 1;

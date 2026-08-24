@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Mongo;
 
 use App\Domain\Model\ChangeInventory;
+use App\Domain\Model\Coin;
 use App\Domain\Model\Money;
 use App\Domain\Model\Product;
 use App\Domain\Model\ProductSku;
@@ -46,6 +47,11 @@ final readonly class VendingMachineRepository implements VendingMachineRepositor
         );
         $document->changeInventory = $this->toStringKeyed($machine->changeInventory()->toArray());
 
+        $document->insertedCoins = array_map(
+            static fn (Coin $coin): int => $coin->value,
+            $machine->insertedCoins(),
+        );
+
         $this->documentManager->persist($document);
         $this->documentManager->flush();
     }
@@ -66,7 +72,12 @@ final readonly class VendingMachineRepository implements VendingMachineRepositor
             array_map(intval(...), $this->fromStringKeyed($document->changeInventory)),
         );
 
-        return VendingMachine::create($document->id, $products, $changeInventory);
+        return VendingMachine::create(
+            $document->id,
+            $products,
+            $changeInventory,
+            array_map(static fn (int $cents): Coin => Coin::from($cents), $document->insertedCoins),
+        );
     }
 
     /**

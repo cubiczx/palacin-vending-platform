@@ -34,33 +34,48 @@ final class VendingMachine
     private array $products;
 
     /** @var list<Coin> Coins inserted in the current, uncommitted session */
-    private array $insertedCoins = [];
+    private array $insertedCoins;
 
     private Money $insertedAmount;
 
     /** @var list<ProductVendedEvent> */
     private array $recordedEvents = [];
 
-    /** @param list<Product> $products */
+    /**
+     * @param list<Product> $products
+     * @param list<Coin> $insertedCoins
+     */
     private function __construct(
         private readonly string $id,
         array $products,
         private ChangeInventory $changeInventory,
+        array $insertedCoins = [],
     ) {
         $this->products = [];
         foreach ($products as $product) {
             $this->products[$product->sku()->value] = $product;
         }
 
-        $this->insertedAmount = Money::zero();
+        $this->insertedCoins = $insertedCoins;
+        $this->insertedAmount = array_reduce(
+            $insertedCoins,
+            static fn (Money $carry, Coin $coin): Money => $carry->add($coin->asMoney()),
+            Money::zero(),
+        );
     }
 
-    /** @param list<Product> $products */
-    public static function create(string $id, array $products, ChangeInventory $changeInventory): self
-    {
-        return new self($id, $products, $changeInventory);
+    /**
+     * @param list<Product> $products
+     * @param list<Coin> $insertedCoins
+     */
+    public static function create(
+        string $id,
+        array $products,
+        ChangeInventory $changeInventory,
+        array $insertedCoins = [],
+    ): self {
+        return new self($id, $products, $changeInventory, $insertedCoins);
     }
-
     public function id(): string
     {
         return $this->id;
@@ -70,6 +85,12 @@ final class VendingMachine
     {
         $this->insertedCoins[] = $coin;
         $this->insertedAmount = $this->insertedAmount->add($coin->asMoney());
+    }
+
+    /** @return list<Coin> */
+    public function insertedCoins(): array
+    {
+        return $this->insertedCoins;
     }
 
     /**
