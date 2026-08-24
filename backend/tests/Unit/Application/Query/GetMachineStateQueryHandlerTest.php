@@ -41,7 +41,10 @@ final class GetMachineStateQueryHandlerTest extends TestCase
         self::assertNotFalse($soda);
 
         self::assertTrue($soda->inStock);
-        self::assertFalse(property_exists($soda, 'stock'), 'customer-facing view must never expose exact stock counts');
+        self::assertFalse(
+            (new \ReflectionClass($soda))->hasProperty('stock'),
+            'customer-facing view must never expose exact stock counts'
+        );
     }
 
     public function testOutOfStockProductIsReportedAsNotInStock(): void
