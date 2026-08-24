@@ -40,7 +40,8 @@ final readonly class ChangeInventory
         return $this->counts[$coin->value] ?? 0;
     }
 
-    public function withdraw(Coin $coin, int $quantity): self // TODO REview que hace
+
+    public function withdraw(Coin $coin, int $quantity): self
     {
         $available = $this->quantityOf($coin);
         if ($quantity > $available) {
