@@ -22,10 +22,14 @@ final class UpdateProductPriceCommandHandlerTest extends TestCase
 
         $handler(new UpdateProductPriceCommand('machine-01', ProductSku::SODA, Money::fromCents(175)));
 
+        $machine = $repository->find('machine-01');
+        self::assertNotNull($machine);
+
         $soda = current(array_filter(
-            $repository->find('machine-01')->products(),
+            $machine->products(),
             static fn ($p) => $p->sku() === ProductSku::SODA,
         ));
+        self::assertNotFalse($soda);
         self::assertSame(175, $soda->price()->cents());
     }
 

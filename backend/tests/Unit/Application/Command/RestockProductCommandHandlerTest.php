@@ -21,10 +21,14 @@ final class RestockProductCommandHandlerTest extends TestCase
 
         $handler(new RestockProductCommand('machine-01', ProductSku::SODA, 8));
 
+        $machine = $repository->find('machine-01');
+        self::assertNotNull($machine);
+
         $soda = current(array_filter(
-            $repository->find('machine-01')->products(),
+            $machine->products(),
             static fn ($p) => $p->sku() === ProductSku::SODA,
         ));
+        self::assertNotFalse($soda);
         self::assertSame(10, $soda->stock());
     }
 

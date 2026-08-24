@@ -21,7 +21,10 @@ final class SetChangeInventoryCommandHandlerTest extends TestCase
 
         $handler(new SetChangeInventoryCommand('machine-01', [5 => 0, 10 => 0, 25 => 0, 100 => 1]));
 
-        $inventory = $repository->find('machine-01')->changeInventory();
+        $machine = $repository->find('machine-01');
+        self::assertNotNull($machine);
+
+        $inventory = $machine->changeInventory();
         self::assertSame(1, $inventory->quantityOf(Coin::ONE_EURO));
         self::assertSame(0, $inventory->quantityOf(Coin::TWENTY_FIVE_CENTS));
     }
