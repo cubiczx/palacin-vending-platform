@@ -21,6 +21,7 @@ final readonly class Money
         }
     }
 
+
     public static function fromCents(int $cents): self
     {
         return new self($cents);

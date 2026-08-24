@@ -18,6 +18,7 @@ final class Product
         private readonly string $name,
         private Money $price,
         private int $stock,
+        //private string $slot, // TODO create Model Slot?
     ) {
         if ($stock < 0) {
             throw new \InvalidArgumentException('Stock cannot be negative.');
