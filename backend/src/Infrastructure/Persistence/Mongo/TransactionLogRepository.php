@@ -110,3 +110,4 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
         return $result;
     }
 }
+ 
