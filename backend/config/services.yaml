@@ -21,3 +21,9 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Domain\Repository\VendingMachineRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Mongo\VendingMachineRepository
+
+    App\Domain\Repository\TransactionLogRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Mongo\TransactionLogRepository
