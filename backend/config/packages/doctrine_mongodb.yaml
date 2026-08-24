@@ -11,8 +11,10 @@ doctrine_mongodb:
             auto_mapping: true
             mappings:
                 App:
-                    dir: '%kernel.project_dir%/src/Document'
-                    prefix: 'App\Document'
+                    type: attribute
+                    dir: '%kernel.project_dir%/src/Infrastructure/Persistence/Mongo/Document'
+                    prefix: 'App\Infrastructure\Persistence\Mongo\Document'
+                    alias: App
 
 when@prod:
     doctrine_mongodb:
