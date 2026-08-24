@@ -32,6 +32,9 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
         $this->documentManager->flush();
     }
 
+    /**
+     * @return array{items: list<TransactionLogEntry>, total: int}
+     */
     public function search(TransactionLogFilter $filter): array
     {
         $qb = $this->documentManager->createQueryBuilder(TransactionLogDocument::class);
@@ -46,8 +49,10 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
             $qb->field('product')->equals($filter->product->value);
         }
 
+        /** @var int $total */
         $total = (clone $qb)->count()->getQuery()->execute();
 
+        /** @var iterable<TransactionLogDocument> $documents */
         $documents = $qb
             ->sort('occurredAt', 'desc')
             ->skip(($filter->page - 1) * $filter->perPage)
@@ -78,9 +83,10 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
     /**
      * @param array<int, int> $counts
      * @return array<string, int>
-    */
+     */
     private function toStringKeyed(array $counts): array
     {
+        /** @var array<string, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(string) $cents] = $quantity;
@@ -95,6 +101,7 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
      */
     private function fromStringKeyed(array $counts): array
     {
+        /** @var array<int, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(int) $cents] = $quantity;

@@ -69,10 +69,13 @@ final readonly class VendingMachineRepository implements VendingMachineRepositor
         return VendingMachine::create($document->id, $products, $changeInventory);
     }
 
-    /** @param array<int, int> $counts Coin cents => quantity */
-    /** @return array<string, int> */
+    /**
+     * @param array<int, int> $counts Coin cents => quantity
+     * @return array<string, int>
+     */
     private function toStringKeyed(array $counts): array
     {
+        /** @var array<string, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(string) $cents] = $quantity;
@@ -81,10 +84,13 @@ final readonly class VendingMachineRepository implements VendingMachineRepositor
         return $result;
     }
 
-    /** @param array<string, int> $counts */
-    /** @return array<int, int> */
+    /**
+     * @param array<string, int> $counts
+     * @return array<int, int>
+     */
     private function fromStringKeyed(array $counts): array
     {
+        /** @var array<int, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(int) $cents] = $quantity;
