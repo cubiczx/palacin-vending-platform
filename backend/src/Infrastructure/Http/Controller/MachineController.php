@@ -12,6 +12,7 @@ use App\Application\Command\SelectProductCommand;
 use App\Application\Command\SelectProductCommandHandler;
 use App\Application\Query\GetMachineStateQuery;
 use App\Application\Query\GetMachineStateQueryHandler;
+use App\Domain\Exception\ProductNotFoundException;
 use App\Domain\Model\Coin;
 use App\Domain\Model\ProductSku;
 use App\Infrastructure\Http\Dto\CoinsResponse;
@@ -61,7 +62,8 @@ final class MachineController
     #[Route('/select/{sku}', methods: ['POST'])]
     public function selectProduct(string $sku, SelectProductCommandHandler $handler): JsonResponse
     {
-        $productSku = ProductSku::from(strtoupper($sku));
+        $productSku = ProductSku::tryFrom(strtoupper($sku))
+            ?? throw ProductNotFoundException::forUnknownSku($sku);
 
         $result = $handler(new SelectProductCommand(self::MACHINE_ID, $productSku));
 

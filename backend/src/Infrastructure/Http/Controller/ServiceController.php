@@ -14,6 +14,7 @@ use App\Application\Query\GetFullMachineStateQuery;
 use App\Application\Query\GetFullMachineStateQueryHandler;
 use App\Application\Query\GetTransactionHistoryQuery;
 use App\Application\Query\GetTransactionHistoryQueryHandler;
+use App\Domain\Exception\ProductNotFoundException;
 use App\Domain\Model\Money;
 use App\Domain\Model\ProductSku;
 use App\Infrastructure\Http\Dto\FullMachineStateResponse;
@@ -51,10 +52,13 @@ final class ServiceController
     #[Route('/products/{sku}/restock', methods: ['POST'])]
     public function restock(string $sku, Request $request, RestockProductCommandHandler $handler): JsonResponse
     {
+        $productSku = ProductSku::tryFrom(strtoupper($sku))
+            ?? throw ProductNotFoundException::forUnknownSku($sku);
+
         /** @var RestockProductRequest $body */
         $body = $this->serializer->deserialize($request->getContent(), RestockProductRequest::class, 'json');
 
-        $handler(new RestockProductCommand(self::MACHINE_ID, ProductSku::from(strtoupper($sku)), $body->quantity));
+        $handler(new RestockProductCommand(self::MACHINE_ID, $productSku, $body->quantity));
 
         return new JsonResponse(null, 204);
     }
@@ -62,12 +66,15 @@ final class ServiceController
     #[Route('/products/{sku}/price', methods: ['PATCH'])]
     public function updatePrice(string $sku, Request $request, UpdateProductPriceCommandHandler $handler): JsonResponse
     {
+        $productSku = ProductSku::tryFrom(strtoupper($sku))
+            ?? throw ProductNotFoundException::forUnknownSku($sku);
+
         /** @var UpdateProductPriceRequest $body */
         $body = $this->serializer->deserialize($request->getContent(), UpdateProductPriceRequest::class, 'json');
 
         $handler(new UpdateProductPriceCommand(
             self::MACHINE_ID,
-            ProductSku::from(strtoupper($sku)),
+            $productSku,
             Money::fromEuros($body->price),
         ));
 
