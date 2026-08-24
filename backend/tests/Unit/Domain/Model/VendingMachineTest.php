@@ -121,7 +121,7 @@ final class VendingMachineTest extends TestCase
     public function testSelectUnknownProductThrows(): void
     {
         $machine = \App\Domain\Model\VendingMachine::create(
-            id: 'machine-02',
+            id: 'machine-only-soda',
             products: [
                 new \App\Domain\Model\Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 5),
             ],
