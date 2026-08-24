@@ -4,104 +4,230 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Infrastructure\Http\Controller;
 
+use App\Domain\Model\ChangeInventory;
+use App\Domain\Model\Money;
+use App\Domain\Model\Product;
+use App\Domain\Model\ProductSku;
+use App\Domain\Model\VendingMachine;
+use App\Domain\Repository\VendingMachineRepositoryInterface;
 use App\Infrastructure\Persistence\Mongo\Document\TransactionLogDocument;
 use App\Infrastructure\Persistence\Mongo\Document\VendingMachineDocument;
-use App\Infrastructure\Persistence\Mongo\VendingMachineRepository;
-use App\Tests\Support\VendingMachineFixture;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 #[Group('functional')]
 final class MachineControllerTest extends WebTestCase
 {
-    private DocumentManager $dm;
-    private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
+    private KernelBrowser $client;
+    private VendingMachineRepositoryInterface $machines;
+    private DocumentManager $documentManager;
 
     protected function setUp(): void
     {
         $this->client = static::createClient();
-        $container = static::getContainer();
 
-        $this->dm = $container->get(DocumentManager::class);
+        $container = $this->client->getContainer();
+        $this->machines = $container->get(VendingMachineRepositoryInterface::class);
+        $this->documentManager = $container->get(DocumentManager::class);
 
-        // Limpia todo
-        $this->dm->getDocumentCollection(VendingMachineDocument::class)->deleteMany([]);
-        $this->dm->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
-        $this->dm->clear();
-
-        // Seed de machine-01, que es la constante hardcodeada en el controller
-        $fixture = VendingMachineFixture::withDefaultCatalog(sodaStock: 2);
-        $machine = \App\Domain\Model\VendingMachine::create(
-            id: 'machine-01',
-            products: $fixture->products(),
-            changeInventory: $fixture->changeInventory()
-        );
-
-        (new VendingMachineRepository($this->dm))->save($machine);
-        $this->dm->clear();
+        $this->documentManager->getDocumentCollection(VendingMachineDocument::class)->deleteMany([]);
+        $this->documentManager->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
     }
 
-    public function testStateEndpointReturnsMachineView(): void
+
+    private function seedDefaultMachine(): void
     {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [
+                new Product(ProductSku::WATER, 'Water', Money::fromCents(65), 5),
+                new Product(ProductSku::JUICE, 'Juice', Money::fromCents(100), 5),
+                new Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 5),
+            ],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+    }
+
+    public function testGetStateReturnsCatalogWithZeroBalance(): void
+    {
+        $this->seedDefaultMachine();
+
         $this->client->request('GET', '/api/machine/state');
 
         self::assertResponseIsSuccessful();
-        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
 
-        self::assertArrayHasKey('products', $data);
-        self::assertCount(3, $data['products']);
-        // El DTO no expone stock, solo inStock
-        self::assertArrayNotHasKey('stock', $data['products'][0]);
-        self::assertArrayHasKey('inStock', $data['products'][0]);
-        self::assertSame(0.0, $data['insertedAmount']);
+        self::assertCount(3, $body['products']);
+        self::assertSame(0.0, $body['insertedAmount']);
     }
 
-    public function testInsertCoinEndpoint(): void
+    public function testInsertCoinIncreasesInsertedAmount(): void
     {
+        $this->seedDefaultMachine();
+
         $this->client->request(
             'POST',
             '/api/machine/coins',
-            content: json_encode(['cents' => 100]),
-            server: ['CONTENT_TYPE' => 'application/json']
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 25]),
         );
 
         self::assertResponseIsSuccessful();
-        $data = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertEquals(1.0, $data['insertedAmount']);
-
-        // Verifica que el state refleja el insert
-        $this->client->request('GET', '/api/machine/state');
-        $state = json_decode($this->client->getResponse()->getContent(), true);
-        // Ajusta si tu response devuelve cents o euros
-        self::assertNotSame(0, $state['insertedAmount']);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(0.25, $body['insertedAmount']);
     }
 
-    public function testFullFlowInsertAndSelect(): void
+    public function testInsertingAnInvalidCoinDenominationReturns400(): void
     {
-        $this->client->request('POST', '/api/machine/coins', content: json_encode(['cents' => 100]), server: ['CONTENT_TYPE' => 'application/json']);
-        self::assertResponseIsSuccessful();
+        $this->seedDefaultMachine();
 
-        $this->client->request('POST', '/api/machine/select/WATER');
-        self::assertResponseIsSuccessful();
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 2]),
+        );
 
-        $data = json_decode($this->client->getResponse()->getContent(), true);
-        // VendingResponse::fromResult() -> adapta keys si son diferentes
-        self::assertArrayHasKey('product', $data);
-        self::assertSame('WATER', $data['product']['sku']?? $data['product']);
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_COIN', $body['error']);
     }
 
-    public function testReturnCoinsEndpoint(): void
+    public function testExample1BuySodaWithExactChangeReturnsNoCoins(): void
     {
-        $this->client->request('POST', '/api/machine/coins', content: json_encode(['cents' => 25]), server: ['CONTENT_TYPE' => 'application/json']);
+        // 1, 0.25, 0.25, GET-SODA -> SODA
+        $this->seedDefaultMachine();
+
+        foreach ([100, 25, 25] as $cents) {
+            $this->client->request(
+                'POST',
+                '/api/machine/coins',
+                server: ['CONTENT_TYPE' => 'application/json'],
+                content: json_encode(['cents' => $cents]),
+            );
+        }
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
         self::assertResponseIsSuccessful();
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('SODA', $body['product']);
+        self::assertSame([], $body['change']['coins']);
+    }
+
+    public function testExample2InsertCoinsThenReturnCoinGivesThemBack(): void
+    {
+        // 0.10, 0.10, RETURN-COIN -> 0.10, 0.10
+        $this->seedDefaultMachine();
+
+        foreach ([10, 10] as $cents) {
+            $this->client->request(
+                'POST',
+                '/api/machine/coins',
+                server: ['CONTENT_TYPE' => 'application/json'],
+                content: json_encode(['cents' => $cents]),
+            );
+        }
 
         $this->client->request('POST', '/api/machine/return');
-        self::assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent(), true);
-        // CoinsResponse::fromCents() - debería devolver algo con 25
-        var_dump($data); // Depuración temporal
-        self::assertNotEmpty($data);
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(['0.10' => 2], $body['coins']);
+    }
+
+    public function testExample3BuyWaterWithoutExactChangeReturnsChange(): void
+    {
+        // 1, GET-WATER -> WATER, 0.25, 0.10
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/water');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('WATER', $body['product']);
+        self::assertSame(['0.25' => 1, '0.10' => 1], $body['change']['coins']);
+    }
+
+    public function testSelectingWithInsufficientFundsReturns402(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 25]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
+        self::assertResponseStatusCodeSame(402);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INSUFFICIENT_FUNDS', $body['error']);
+    }
+
+    public function testSelectingAnOutOfStockProductReturns409(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 0)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
+        self::assertResponseStatusCodeSame(409);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('OUT_OF_STOCK', $body['error']);
+    }
+
+    public function testSelectingAProductNotInTheMachinesCatalogReturns404(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 5)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        // WATER is a valid enum case but this machine's catalog only has SODA.
+        $this->client->request('POST', '/api/machine/select/water');
+
+        self::assertResponseStatusCodeSame(404);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
+    }
+
+    public function testSelectingAnUnrecognizedSkuReturns404(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request('POST', '/api/machine/select/cola');
+
+        self::assertResponseStatusCodeSame(404);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
     }
 }

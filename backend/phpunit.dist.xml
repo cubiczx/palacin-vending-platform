@@ -12,7 +12,8 @@
 >
     <groups>
         <exclude>
-        <group>integration</group>
+            <group>integration</group>
+            <group>functional</group>
         </exclude>
     </groups>
 
