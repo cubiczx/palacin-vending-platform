@@ -20,9 +20,21 @@ After starting the backend for the first time, seed the default machine (3 produ
   php bin/console app:seed-machine
 ​```
 
+### Seeding with Docker
+
+The backend container automatically runs `app:seed-machine` on every startup, before starting PHP-FPM. The
+command is idempotent, so re-running `docker compose up` on an existing Mongo volume is a safe no-op.
+
 This command is idempotent — running it again when the machine already exists is a safe no-op.
 
 ## Trade-offs / What I'd improve with more time
+
+- **Product slot position (e.g. "A1") was considered but intentionally left out**: it's purely operator-facing
+  display metadata for the service/admin UI (where a product physically sits), unrelated to any pricing, stock,
+  or vending rule the challenge exercises. Adding it would touch `Product`, the Mongo document mapping, several
+  DTOs and both frontends for a field no business logic ever reads — scope not justified here. If it were needed,
+  it would be a `Slot` value object (row + column) on `Product`, kept separate from `ProductSku` (its business
+  identity) so relocating a product on the physical machine never touches pricing or stock logic.
 
 - **Slot capacity (max units per slot) was considered but intentionally left out**: the challenge only requires
   tracking current stock count, not a physical maximum per slot position. Adding it would mean extending `Product`

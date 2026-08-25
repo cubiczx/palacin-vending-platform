@@ -5,6 +5,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
     build: ./backend
@@ -13,7 +18,9 @@ services:
       MONGODB_DB: vending
       APP_ENV: prod
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "php bin/console app:seed-machine && php-fpm"]
 
   backend-webserver:
     image: nginx:alpine
