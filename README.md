@@ -14,6 +14,10 @@ run into them when evaluating.
 
 ## Trade-offs / What I'd improve with more time
 
+- **Slot capacity (max units per slot) was considered but intentionally left out**: the challenge only requires
+  tracking current stock count, not a physical maximum per slot position. Adding it would mean extending `Product`
+  and validating it on restock without the challenge exercising that rule anywhere — scope not justified here.
+  
 - **Transaction history date filtering**: `GET /api/service/transactions` accepts a `product` filter, but `from`/`to`
   query params for date-range filtering are not yet parsed at the HTTP boundary, even though the underlying query
   and repository already support it. Wiring this up is a small, isolated addition to `ServiceController::transactions()`.
