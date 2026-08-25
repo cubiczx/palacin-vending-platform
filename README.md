@@ -12,12 +12,22 @@ not be tested end-to-end locally**. The configuration follows standard practices
 Node build + Nginx static serving, MongoDB container) and should work as-is, but please report any issues if you
 run into them when evaluating.
 
+### Seed initial data
+
+After starting the backend for the first time, seed the default machine (3 products, plentiful change):
+
+​```bash
+  php bin/console app:seed-machine
+​```
+
+This command is idempotent — running it again when the machine already exists is a safe no-op.
+
 ## Trade-offs / What I'd improve with more time
 
 - **Slot capacity (max units per slot) was considered but intentionally left out**: the challenge only requires
   tracking current stock count, not a physical maximum per slot position. Adding it would mean extending `Product`
   and validating it on restock without the challenge exercising that rule anywhere — scope not justified here.
-  
+
 - **Transaction history date filtering**: `GET /api/service/transactions` accepts a `product` filter, but `from`/`to`
   query params for date-range filtering are not yet parsed at the HTTP boundary, even though the underlying query
   and repository already support it. Wiring this up is a small, isolated addition to `ServiceController::transactions()`.
