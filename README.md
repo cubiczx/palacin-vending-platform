@@ -32,3 +32,16 @@ run into them when evaluating.
   successfully withdrawn from it. A real machine could sometimes "reuse" a just-inserted coin to complete change for
   the same transaction; modelling that would require solving a more complex bin-packing problem for comparatively
   little benefit in this scope, so it was deliberately left out.
+
+  - **No dedicated tests for DTOs (Commands, Queries, ReadModel views)**: these are plain `readonly` data
+  carriers with no behaviour of their own — constructor assignment is guaranteed by PHP, so testing them in
+  isolation would only pin down language semantics, not business rules. Their correctness is exercised
+  indirectly through the handler tests that construct and consume them (e.g. `GetMachineStateQueryHandlerTest`
+  verifies `ProductView` never leaks exact stock counts).
+
+- **Optimistic locking via `#[ODM\Version]`**: relies on Doctrine ODM's per-request identity map — within a single
+  request, the same managed document instance flows from `find()` through to `save()`, preserving the version it
+  was loaded with, so a stale write from a concurrent request correctly triggers a `LockException` at `flush()`.
+  This is verified in `VendingMachineRepositoryTest::testConcurrentSavesDetectVersionConflictViaOptimisticLocking`
+  (using `DocumentManager::clear()` between reads to simulate two independent requests). Not yet handled: a
+  `LockException` currently surfaces as a generic 500 rather than a clean HTTP conflict response.
