@@ -4,7 +4,8 @@ import { ProductGrid } from './components/ProductGrid';
 import { CoinInsertionPanel } from './components/CoinInsertionPanel';
 import { ReturnCoinsButton } from './components/ReturnCoinsButton';
 import { OutputTray } from './components/OutputTray';
-import './App.css';
+import './index.css'
+import './App.scss';
 
 export default function App() {
   const { state, loading, busy, feedback, insertCoin, selectProduct, returnCoins } = useMachineState();

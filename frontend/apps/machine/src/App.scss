@@ -1,0 +1,106 @@
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+html, body { overflow-x: hidden; }
+
+// --- mixins para no repetir media queries ---
+@mixin tablet-up { @media (min-width: 768px) { @content; } }
+@mixin mobile-portrait { @media (max-width: 767px) and (orientation: portrait) { @content; } }
+@mixin mobile-landscape { @media (max-height: 500px) and (orientation: landscape) { @content; } }
+
+.machine-grid {
+  display: grid;
+  grid-template-areas: "header" "products" "panel";
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+
+  > header {
+    grid-area: header;
+    height: fit-content;
+    align-self: start;
+  }
+  > .products-column { grid-area: products; }
+  > .panel-column { grid-area: panel; }
+
+  @include tablet-up {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "header header" "products panel";
+  }
+
+  @include mobile-portrait {
+    min-height: 100dvh;
+    padding: 0.75rem;
+    gap: 0.5rem;
+
+    > header {
+      padding: 0.5rem 1rem !important;
+      h1 { font-size: 1.125rem !important; line-height: 1 !important; }
+    }
+
+    .products-column {
+      h2 { margin-bottom: 0.25rem; }
+      .flex-col { gap: 0.5rem; }
+      [role="listitem"] {
+        padding: 0.5rem 0.75rem;
+        > div:first-child { height: 2.5rem; width: 2.5rem; font-size: 1.25rem; }
+      }
+    }
+
+    > .panel-column { padding: 0.75rem; }
+    .balance-box { padding: 0.5rem 0.75rem !important; }
+    .balance-amount { margin-top: 0 !important; padding: 0.35rem !important; font-size: 1.75rem !important; }
+
+    .coin-panel {
+      margin-top: 0.4rem !important;
+      legend { margin-bottom: 0.25rem !important; }
+      button { padding: 0.25rem 0 !important; }
+    }
+
+    .return-button { margin-top: 0.4rem !important; padding: 0.4rem !important; }
+    .output-tray {
+      margin-top: 0.4rem !important;
+      > p:first-child { margin-bottom: 0.25rem !important; }
+      > div { min-height: 4.5rem !important; max-height: none !important; padding: 0.5rem !important; }
+    }
+  }
+
+  @include mobile-landscape {
+    grid-template-columns: 1.05fr 1fr;
+    grid-template-areas: "header header" "products panel";
+    gap: 0.5rem;
+    max-width: 100%;
+
+    > header {
+      padding: 0.5rem 1rem !important;
+      h1 { font-size: 1.1rem; }
+    }
+
+    > .products-column, > .panel-column {
+      min-width: 0;
+      overflow-y: auto;
+      max-height: 80dvh;
+    }
+
+    .balance-box {
+      padding: 0.6rem 1rem !important;
+      p:first-child { display: none; }
+    }
+    .balance-amount { margin-top: 0 !important; padding: 0.5rem !important; font-size: 1.5rem !important; }
+
+    .coin-panel {
+      margin-top: 0.5rem !important;
+      legend { margin-bottom: 0.25rem !important; }
+      button { padding: 0.4rem 0 !important; }
+    }
+
+    .return-button { margin-top: 0.5rem !important; padding: 0.5rem !important; }
+    .output-tray {
+      margin-top: 0.5rem !important;
+      > p:first-child { margin-bottom: 0.25rem !important; }
+      > div { min-height: 4.5rem !important; max-height: none !important; padding: 0.5rem !important; }
+    }
+  }
+}
