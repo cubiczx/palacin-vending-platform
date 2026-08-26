@@ -1,8 +1,13 @@
 {
   "name": "machine",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "author": {
+    "name": "Xavier Palacín Ayuso",
+    "email": "cubiczx@hotmail.com",
+    "url": "https://github.com/cubiczx"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -26,6 +31,7 @@
     "@vitejs/plugin-react": "^6.0.4",
     "jsdom": "^30.0.1",
     "oxlint": "^1.75.0",
+    "sass": "^1.103.1",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.11"
