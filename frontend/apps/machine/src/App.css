@@ -224,3 +224,99 @@ body {
     padding-top: 48px;
   }
 }
+
+/* Ensure the page always scrolls if content genuinely doesn't fit,
+   as a safety net under the landscape reflow below. */
+html, body {
+  height: 100%;
+}
+
+body {
+  overflow-y: auto;
+}
+
+.machine {
+  min-height: 100dvh; /* dvh accounts for mobile browser chrome, unlike vh */
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Landscape phones (short viewport height): reflow to two columns so every
+   control — including Return coins and feedback — stays visible without
+   scrolling, instead of just stacking everything vertically. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .machine {
+    max-width: none;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    grid-template-areas:
+      'title title'
+      'balance products'
+      'coins products'
+      'actions products';
+    gap: 10px;
+    align-content: start;
+  }
+
+  .machine__title {
+    grid-area: title;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .balance {
+    grid-area: balance;
+    padding: 8px 14px;
+  }
+
+  .product-grid {
+    grid-area: products;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .product-card {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 12px;
+  }
+
+  .coin-panel {
+    grid-area: coins;
+  }
+
+  .coin-panel__buttons {
+    gap: 6px;
+  }
+
+  .coin-button {
+    padding: 8px 0;
+  }
+
+  .actions {
+    grid-area: actions;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .return-button {
+    padding: 10px;
+  }
+
+  .feedback {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
