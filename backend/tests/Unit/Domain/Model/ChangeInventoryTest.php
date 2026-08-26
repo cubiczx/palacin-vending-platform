@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Model;
 
+use App\Domain\Exception\InvalidChangeQuantityException;
 use App\Domain\Model\ChangeInventory;
 use App\Domain\Model\Coin;
 use PHPUnit\Framework\TestCase;
@@ -48,7 +49,7 @@ final class ChangeInventoryTest extends TestCase
 
     public function testNegativeInitialQuantityThrows(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidChangeQuantityException::class);
 
         ChangeInventory::fromCounts([25 => -1]);
     }

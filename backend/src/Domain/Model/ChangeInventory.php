@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Model;
 
+use App\Domain\Exception\InvalidChangeQuantityException;
+
 /**
  * Immutable snapshot of how many coins of each denomination the machine
  * currently holds for giving change. Every mutation returns a new instance.
@@ -22,7 +24,7 @@ final readonly class ChangeInventory
         foreach (Coin::cases() as $coin) {
             $quantity = $counts[$coin->value] ?? 0;
             if ($quantity < 0) {
-                throw new \InvalidArgumentException("Coin quantity for {$coin->name} cannot be negative.");
+                throw InvalidChangeQuantityException::forNegativeQuantity($coin->name);
             }
             $normalized[$coin->value] = $quantity;
         }

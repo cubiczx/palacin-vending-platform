@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Model;
 
+use App\Domain\Exception\InvalidRestockQuantityException;
 use App\Domain\Exception\OutOfStockException;
 use App\Domain\Model\Money;
 use App\Domain\Model\Product;
@@ -54,7 +55,7 @@ final class ProductTest extends TestCase
     {
         $product = $this->makeProduct();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidRestockQuantityException::class);
 
         $product->restock(-1);
     }

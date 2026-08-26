@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Model;
 
+use App\Domain\Exception\InvalidRestockQuantityException;
 use App\Domain\Exception\OutOfStockException;
 
 /**
@@ -61,7 +62,7 @@ final class Product
     public function restock(int $quantity): void
     {
         if ($quantity < 0) {
-            throw new \InvalidArgumentException('Restock quantity cannot be negative.');
+            throw InvalidRestockQuantityException::forNegativeQuantity();
         }
 
         $this->stock += $quantity;
