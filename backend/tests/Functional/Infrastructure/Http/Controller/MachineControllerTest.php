@@ -95,6 +95,38 @@ final class MachineControllerTest extends WebTestCase
         self::assertSame('INVALID_COIN', $body['error']);
     }
 
+    public function testInsertingANonNumericCentsValueReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 'a']),
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_REQUEST_BODY', $body['error']);
+    }
+
+    public function testInsertingMalformedJsonReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"cents": a}',
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_REQUEST_BODY', $body['error']);
+    }
+
     public function testExample1BuySodaWithExactChangeReturnsNoCoins(): void
     {
         // 1, 0.25, 0.25, GET-SODA -> SODA

@@ -194,4 +194,121 @@ final class ServiceControllerTest extends WebTestCase
         self::assertSame(0, $body['total']);
         self::assertSame([], $body['items']);
     }
+
+        public function testRestockingWithNegativeQuantityReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/service/products/soda/restock',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['quantity' => -1]),
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_RESTOCK_QUANTITY', $body['error']);
+    }
+
+    public function testSetChangeInventoryWithNegativeQuantityReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/service/change',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['counts' => ['25' => -5]]),
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_CHANGE_QUANTITY', $body['error']);
+    }
+
+    public function testSetChangeInventoryWithNegativeQuantityDoesNotChangeTheInventory(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/service/change',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['counts' => ['25' => -5]]),
+        );
+
+        $this->client->request('GET', '/api/service/state');
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(20, $body['changeInventory']['coins']['0.25']);
+    }
+
+    public function testTransactionsWithInvalidProductFilterReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request('GET', '/api/service/transactions?product=cola');
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_PRODUCT_FILTER', $body['error']);
+    }
+
+    public function testTransactionsWithValidProductFilterReturnsOnlyMatchingEntries(): void
+    {
+        $this->seedDefaultMachine();
+        $this->transactionLogs->record(new TransactionLogEntry(
+            id: null,
+            product: ProductSku::WATER,
+            price: Money::fromCents(65),
+            amountInserted: Money::fromCents(100),
+            changeReturned: [25 => 1, 10 => 1],
+            occurredAt: new DateTimeImmutable('2026-08-24T10:00:00+00:00'),
+        ));
+        $this->transactionLogs->record(new TransactionLogEntry(
+            id: null,
+            product: ProductSku::SODA,
+            price: Money::fromCents(150),
+            amountInserted: Money::fromCents(150),
+            changeReturned: [],
+            occurredAt: new DateTimeImmutable('2026-08-24T11:00:00+00:00'),
+        ));
+
+        $this->client->request('GET', '/api/service/transactions?product=water');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(1, $body['total']);
+        self::assertSame('WATER', $body['items'][0]['product']);
+    }
+
+    public function testUpdatingPriceToANegativeValueReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'PATCH',
+            '/api/service/products/soda/price',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['price' => -1.5]),
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame('INVALID_PRODUCT_PRICE', $body['error']);
+    }
+
+    public function testUpdatingPriceToZeroIsAllowed(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'PATCH',
+            '/api/service/products/soda/price',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['price' => 0.0]),
+        );
+
+        self::assertResponseStatusCodeSame(204);
+    }
 }
