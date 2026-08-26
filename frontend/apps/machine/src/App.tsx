@@ -27,9 +27,15 @@ export default function App() {
 
   return (
     <main className="machine">
-      <h1 className="machine__title">Vending Machine</h1>
+      <h1 className="machine__title">Palacin</h1>
 
       <BalanceDisplay amount={state.insertedAmount} />
+
+      <div className="sr-only" aria-live="polite">
+        {busy ? 'Processing…' : ''}
+      </div>
+
+      <h2 className="sr-only">Available products</h2>
 
       <ProductGrid
         products={state.products}
@@ -40,9 +46,10 @@ export default function App() {
 
       <CoinInsertionPanel onInsert={insertCoin} disabled={busy} />
 
-      <ReturnCoinsButton disabled={busy || state.insertedAmount === 0} onClick={returnCoins} />
-
-      <FeedbackMessage feedback={feedback} />
+      <div className="actions">
+        <ReturnCoinsButton disabled={busy || state.insertedAmount === 0} amount={state.insertedAmount} onClick={returnCoins} />
+        <FeedbackMessage feedback={feedback} />
+      </div>
     </main>
   );
 }
