@@ -4,9 +4,14 @@ interface Props {
 
 export function BalanceDisplay({ amount }: Props) {
   return (
-    <div className="balance" aria-live="polite">
-      <span className="balance__label">Balance</span>
-      <span className="balance__amount">{amount.toFixed(2)}€</span>
+    <div className="balance-box rounded-2xl bg-panel p-6 text-center">
+      <p className="text-xs font-semibold tracking-widest text-text-muted uppercase">Current balance</p>
+      <p
+        aria-live="polite"
+        className="balance-amount mt-2 rounded-xl border-2 border-accent/60 py-4 font-display text-5xl font-bold text-accent shadow-[0_0_24px_-4px_var(--color-accent)]"
+      >
+        {amount.toFixed(2)}€
+      </p>
     </div>
   );
 }
