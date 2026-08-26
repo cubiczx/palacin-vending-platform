@@ -181,4 +181,53 @@ final class DomainExceptionListenerTest extends WebTestCase
         $water = current(array_filter($serviceBody['products'], static fn ($p) => $p['sku'] === 'WATER'));
         self::assertSame(5, $water['stock']);
     }
+
+    public function testNegativeRestockQuantityMapsTo400(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::WATER, 'Water', Money::fromCents(65), 5)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        $this->client->request(
+            'POST',
+            '/api/service/products/water/restock',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['quantity' => -1]),
+        );
+
+        $this->assertDomainErrorResponse('INVALID_RESTOCK_QUANTITY', 400);
+    }
+
+    public function testNegativeChangeQuantityMapsTo400(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::WATER, 'Water', Money::fromCents(65), 5)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        $this->client->request(
+            'POST',
+            '/api/service/change',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['counts' => ['25' => -5]]),
+        );
+
+        $this->assertDomainErrorResponse('INVALID_CHANGE_QUANTITY', 400);
+    }
+
+    public function testInvalidProductFilterMapsTo400(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::WATER, 'Water', Money::fromCents(65), 5)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        $this->client->request('GET', '/api/service/transactions?product=cola');
+
+        $this->assertDomainErrorResponse('INVALID_PRODUCT_FILTER', 400);
+    }
 }
