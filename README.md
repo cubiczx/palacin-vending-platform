@@ -1,5 +1,15 @@
 # palacin-vending-platform
+
 🎓 Vending Machine Technical Challenge — Full-stack implementation with Symfony & React.
+
+## 🛠️ Requirements
+
+- **Node.js** (v24+ recommended)
+- **npm** (v10+ recommended, supporting npm workspaces)
+- **PHP** 8.4+
+- **Composer** (for the backend API)
+- **Symfony CLI** (optional, for `symfony server:start`)
+- **MongoDB** 7.0+ (for the backend API)
 
 ## Development environment
 
@@ -12,12 +22,18 @@ not be tested end-to-end locally**. The configuration follows standard practices
 Node build + Nginx static serving, MongoDB container) and should work as-is, but please report any issues if you
 run into them when evaluating.
 
+## Local Installation
+
+```bash
+composer install
+```
+
 ### Seed initial data
 
 After starting the backend for the first time, seed the default machine (3 products, plentiful change):
 
 ​```bash
-  php bin/console app:seed-machine
+php bin/console app:seed-machine
 ​```
 
 ### Seeding with Docker
@@ -26,6 +42,56 @@ The backend container automatically runs `app:seed-machine` on every startup, be
 command is idempotent, so re-running `docker compose up` on an existing Mongo volume is a safe no-op.
 
 This command is idempotent — running it again when the machine already exists is a safe no-op.
+
+### Start local server
+
+```bash
+symfony server:start
+# or alternatively: php -S 127.0.0.1:8000 -t public
+```
+
+- API available at `http://127.0.0.1:8000/api`
+- Swagger UI at `http://127.0.0.1:8000/api/doc`
+- Swagger JSON at `http://127.0.0.1:8000/api/doc.json`
+
+## Tests
+
+```bash
+php bin/phpunit
+```
+
+## Frontend Setup & Execution
+
+The frontend application for the vending machine is located in the `frontend` directory (`/palacin-vending-platform/frontend`).
+
+### 1. Installation
+
+From the repository root, navigate into the `frontend` directory and install all workspace dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+### 🏃 Running the Vending Machine UI
+
+To start the frontends interface, run the following command from the `frontend` root folder.
+
+#### Start the Machine UI (apps/machine)
+
+```bash
+npm run dev --workspace apps/machine
+```
+
+> **Default URL**: http://localhost:5173 (or as displayed in your terminal output)
+
+##### Start the Service / Management UI (apps/service)
+
+```bash
+npm run dev --workspace apps/service
+```
+
+> **Default URL**: http://localhost:5174 (or as displayed in your terminal output)
 
 ## Trade-offs / What I'd improve with more time
 
@@ -71,3 +137,10 @@ This command is idempotent — running it again when the machine already exists 
   This is verified in `VendingMachineRepositoryTest::testConcurrentSavesDetectVersionConflictViaOptimisticLocking`
   (using `DocumentManager::clear()` between reads to simulate two independent requests). Not yet handled: a
   `LockException` currently surfaces as a generic 500 rather than a clean HTTP conflict response.
+
+## Auxiliary libraries
+
+- **Tailwind CSS v4** (`machine` app): utility-first styling with design tokens defined via `@theme` in plain CSS
+  (no `tailwind.config.js` needed in v4). Chosen for fast iteration on visual hierarchy/states without hand-rolling
+  a CSS file per component.
+- **Google Fonts (Space Grotesk + Inter) loaded via `<link>`**: [pega el bullet de arriba aquí]
