@@ -58,6 +58,7 @@ To restore the machine to its initial inventory of products and change:
 
 ```bash
 mongosh mongodb://localhost:27017/vending --eval "db.machine_state.deleteMany({})"
+mongosh mongodb://localhost:27017/vending --eval "db.transaction_logs.deleteMany({})"
 ```
 
 ##### 2. Re-seed defaults
