@@ -29,8 +29,27 @@ export function useMachineState() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    const controller = new AbortController();
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await machineApi.getState();
+        if (!cancelled) setState(data);
+      } catch (err) {
+        if (!cancelled && err instanceof ApiError) {
+          setFeedback({ type: 'error', code: err.code, message: err.message });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
 
   const runAction = useCallback(
     async (action: () => Promise<void>) => {
@@ -55,7 +74,7 @@ export function useMachineState() {
     (cents: number) =>
       runAction(async () => {
         const { insertedAmount } = await machineApi.insertCoin(cents);
-        setState((prev) => (prev ? { ...prev, insertedAmount } : prev));
+        setState(prev => prev? {...prev, insertedAmount: insertedAmount?? prev.insertedAmount?? 0 } : prev)
       }),
     [runAction],
   );
