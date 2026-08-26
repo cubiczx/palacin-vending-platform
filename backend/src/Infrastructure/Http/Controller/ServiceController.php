@@ -20,6 +20,7 @@ use App\Domain\Model\ProductSku;
 use App\Infrastructure\Http\Dto\FullMachineStateResponse;
 use App\Infrastructure\Http\Dto\RestockProductRequest;
 use App\Infrastructure\Http\Dto\SetChangeInventoryRequest;
+use App\Infrastructure\Http\Dto\TransactionHistoryResponse;
 use App\Infrastructure\Http\Dto\UpdateProductPriceRequest;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -115,7 +116,7 @@ final class ServiceController
             perPage: (int) $request->query->get('perPage', '20'),
         ));
 
-        return $this->json($result);
+        return $this->json(TransactionHistoryResponse::fromResult($result));
     }
 
     private function json(mixed $data): JsonResponse
