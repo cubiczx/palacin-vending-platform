@@ -1,122 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useServiceState } from './hooks/useServiceState';
+import { ServiceHeader } from './components/ServiceHeader';
+import { ProductServiceCard } from './components/ProductServiceCard';
+import { ChangeInventoryForm } from './components/ChangeInventoryForm';
+import { TransactionHistoryTable } from './components/TransactionHistoryTable';
+import { Toast } from './components/Toast';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const { state, transactions, loading, busy, toast, restock, updatePrice, setChangeInventory } = useServiceState();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+        <p>Loading service panel…</p>
+      </main>
+    );
+  }
+
+  if (!state) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center px-6 text-center text-slate-500">
+        <p>Unable to reach the service panel. Please try again later.</p>
+      </main>
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="mx-auto min-h-dvh max-w-5xl space-y-4 px-4 py-6" aria-busy={busy}>
+      <ServiceHeader />
 
-      <div className="ticks"></div>
+      <Toast toast={toast} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+      <section aria-label="Products">
+        <h2 className="mb-3 text-xs font-semibold tracking-widest text-slate-500 uppercase">Products</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {state.products.map((product) => (
+            <ProductServiceCard
+              key={product.sku}
+              product={product}
+              busy={busy}
+              onRestock={(quantity) => restock(product.sku, quantity)}
+              onUpdatePrice={(price) => updatePrice(product.sku, price)}
+            />
+          ))}
         </div>
       </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <section aria-label="Change inventory">
+        <h2 className="mb-3 text-xs font-semibold tracking-widest text-slate-500 uppercase">Change</h2>
+        <ChangeInventoryForm coins={state.changeInventory.coins} busy={busy} onSave={setChangeInventory} />
+      </section>
+
+      <section aria-label="Recent sales">
+        <h2 className="mb-3 text-xs font-semibold tracking-widest text-slate-500 uppercase">Recent sales</h2>
+        <TransactionHistoryTable transactions={transactions} />
+      </section>
+    </div>
+  );
 }
-
-export default App
