@@ -30,11 +30,13 @@ composer install
 
 ### Seed initial data
 
-After starting the backend for the first time, seed the default machine (3 products, plentiful change):
+On first boot the database is empty. Seed the default machine state (3 products + full coin inventory):
 
 ​```bash
 php bin/console app:seed-machine
 ​```
+
+This creates the initial machine_state document. The command is idempotent — it will skip seeding if data already exists.
 
 ### Seeding with Docker
 
@@ -42,6 +44,30 @@ The backend container automatically runs `app:seed-machine` on every startup, be
 command is idempotent, so re-running `docker compose up` on an existing Mongo volume is a safe no-op.
 
 This command is idempotent — running it again when the machine already exists is a safe no-op.
+
+### Reset machine to factory defaults
+
+To restore the machine to its initial inventory of products and change:
+
+#### Option 1: Via MongoDB (recommended for dev)
+
+##### 1. Clear current state
+
+```bash
+mongosh mongodb://localhost:27017/vending --eval "db.machine_state.deleteMany({})"
+```
+
+##### 2. Re-seed defaults
+
+```bash
+php bin/console app:seed-machine
+```
+
+> Use the `MONGODB_DSN` from your `.env` if it's different. With Docker: `docker exec -it vending-mongo mongosh vending --eval "db.machine_state.deleteMany({})`"
+
+#### Option 2: Via Service Mode
+
+Open the frontend at /service and use Restock → Reset to defaults.
 
 ### Start local server
 
