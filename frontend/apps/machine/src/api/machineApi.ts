@@ -2,16 +2,17 @@ import { apiRequest } from './client';
 import type { MachineState, ProductSku, ReturnResult, VendResult } from '../types/machine';
 
 export const machineApi = {
-  getState: (): Promise<MachineState> => apiRequest('/machine/state'),
+  getState: (signal?: AbortSignal): Promise<MachineState> => apiRequest('/machine/state', { signal }),
 
-  insertCoin: (cents: number): Promise<{ insertedAmount: number }> =>
+  insertCoin: (cents: number, signal?: AbortSignal): Promise<{ insertedAmount: number }> =>
     apiRequest('/machine/coins', {
       method: 'POST',
       body: JSON.stringify({ cents }),
+      signal,
     }),
 
-  selectProduct: (sku: ProductSku): Promise<VendResult> =>
-    apiRequest(`/machine/select/${sku.toLowerCase()}`, { method: 'POST' }),
+  selectProduct: (sku: ProductSku, signal?: AbortSignal): Promise<VendResult> =>
+    apiRequest(`/machine/select/${sku.toLowerCase()}`, { method: 'POST', signal, }),
 
-  returnCoins: (): Promise<ReturnResult> => apiRequest('/machine/return', { method: 'POST' }),
+  returnCoins: (signal?: AbortSignal): Promise<ReturnResult> => apiRequest('/machine/return', { method: 'POST', signal, }),
 };

@@ -15,11 +15,12 @@ export function useMachineState() {
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({ type: 'idle' });
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (signal?: AbortSignal) => {
     try {
-      const data = await machineApi.getState();
+      const data = await machineApi.getState(signal);
       setState(data);
     } catch (err) {
+      if ((err as DOMException)?.name === 'AbortError') return;
       if (err instanceof ApiError) {
         setFeedback({ type: 'error', code: err.code, message: err.message });
       }
@@ -30,26 +31,9 @@ export function useMachineState() {
 
   useEffect(() => {
     const controller = new AbortController();
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const data = await machineApi.getState();
-        if (!cancelled) setState(data);
-      } catch (err) {
-        if (!cancelled && err instanceof ApiError) {
-          setFeedback({ type: 'error', code: err.code, message: err.message });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, []);
+    refresh(controller.signal);
+    return () => controller.abort();
+  }, [refresh]);
 
   const runAction = useCallback(
     async (action: () => Promise<void>) => {

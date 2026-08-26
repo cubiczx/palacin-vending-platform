@@ -1,13 +1,14 @@
 import type { ApiErrorBody } from '../types/machine';
 
 export class ApiError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-    public readonly status: number,
-  ) {
+  public readonly code: string;
+  public readonly status: number;
+
+  constructor(code: string, message: string, status: number) {
     super(message);
     this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
   }
 }
 
