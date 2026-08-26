@@ -2,14 +2,17 @@
 
 🎓 Vending Machine Technical Challenge — Full-stack implementation with Symfony & React.
 
-## 🛠️ Requirements
+## 🛠️ Requirements for backend API
+
+- **PHP** 8.4+
+- **Composer** 2+
+- **MongoDB** 7.0+
+- **Symfony CLI** (optional, for `symfony server:start`)
+
+## 🛠️ Requirements for frontend's
 
 - **Node.js** (v24+ recommended)
 - **npm** (v10+ recommended, supporting npm workspaces)
-- **PHP** 8.4+
-- **Composer** (for the backend API)
-- **Symfony CLI** (optional, for `symfony server:start`)
-- **MongoDB** 7.0+ (for the backend API)
 
 ## Development environment
 
@@ -80,7 +83,7 @@ symfony server:start
 - Swagger UI at `http://127.0.0.1:8000/api/doc`
 - Swagger JSON at `http://127.0.0.1:8000/api/doc.json`
 
-## Tests
+## Backend Tests
 
 ```bash
 php bin/phpunit
@@ -118,6 +121,14 @@ npm run dev --workspace apps/service
 ```
 
 > **Default URL**: http://localhost:5174 (or as displayed in your terminal output)
+
+## 🧪 Frontend's Testing
+
+The project includes a complete suite of tests using Jest and the React Testing Library:
+
+```bash
+npm test
+```
 
 ## Trade-offs / What I'd improve with more time
 
