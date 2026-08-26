@@ -14,3 +14,4 @@
 # Scripts que requieren LF sí o sí (evita fallos en contenedores Linux)
 *.sh text eol=lf
 Dockerfile text eol=lf
+docker/nginx/* text eol=lf
