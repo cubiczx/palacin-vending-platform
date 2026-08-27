@@ -124,6 +124,7 @@ To start the frontends interface, run the following command from the `frontend` 
 #### Start the Machine UI (apps/machine)
 
 ```bash
+cd frontend
 npm run dev --workspace apps/machine
 ```
 
@@ -132,6 +133,7 @@ npm run dev --workspace apps/machine
 ##### Start the Service / Management UI (apps/service)
 
 ```bash
+cd frontend
 npm run dev --workspace apps/service
 ```
 
@@ -142,7 +144,9 @@ npm run dev --workspace apps/service
 The project includes a complete suite of tests using Jest and the React Testing Library:
 
 ```bash
-npm test
+cd frontend
+npm run test --workspace apps/service
+npm run test --workspace apps/machine
 ```
 
 ## 🐳 Running with Docker (Zero-dependency setup)
@@ -159,6 +163,7 @@ Once running, the applications will be available at:
 - Service Frontend: `http://localhost:5174`
 - Backend API: `http://localhost:8080/api`
 - Swagger UI: `http://localhost:8080/api/doc`
+- Swagger JSON: `http://localhost:8080/api/doc.json`
 
 > **Note**: The backend container automatically runs `php bin/console app:seed-machine` on startup to initialize the MongoDB database if empty.
 
