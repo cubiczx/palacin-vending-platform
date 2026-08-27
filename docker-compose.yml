@@ -16,13 +16,20 @@ services:
     build: ./backend
     container_name: vending-backend
     environment:
-      MONGODB_URL: mongodb://mongo:27017
-      MONGODB_DB: vending
       APP_ENV: prod
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_URL: mongodb://mongo:27017/vending
+      MONGODB_DB: vending
     depends_on:
       mongo:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c", "php bin/console app:seed-machine && php-fpm"]
+    entrypoint: >
+      /bin/sh -c "
+      mkdir -p var/cache var/log &&
+      chown -R www-data:www-data var &&
+      su -s /bin/sh www-data -c 'php bin/console app:seed-machine' &&
+      php-fpm
+      "
 
   backend-webserver:
     image: nginx:alpine
