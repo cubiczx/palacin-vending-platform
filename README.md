@@ -2,7 +2,11 @@
 
 🎓 Vending Machine Technical Challenge — Full-stack implementation with Symfony & React.
 
-## 🛠️ Requirements for backend API
+## 💻 Local Machine Setup (Development)
+
+If you prefer running the applications natively on your host machine:
+
+### 🛠️ Requirements for backend API in Local machine
 
 - **PHP** 8.4+
 - **Composer** 2+
@@ -25,9 +29,10 @@ not be tested end-to-end locally**. The configuration follows standard practices
 Node build + Nginx static serving, MongoDB container) and should work as-is, but please report any issues if you
 run into them when evaluating.
 
-## Local Installation
+## Backend Setup
 
 ```bash
+cd backend
 composer install
 ```
 
@@ -94,6 +99,15 @@ php bin/phpunit
 
 The frontend application for the vending machine is located in the `frontend` directory (`/palacin-vending-platform/frontend`).
 
+### Frontend Setup
+
+Copy environment configurations (first time only):
+
+```bash
+cp frontend/apps/machine/.env.example frontend/apps/machine/.env
+cp frontend/apps/service/.env.example frontend/apps/service/.env
+```
+
 ### 1. Installation
 
 From the repository root, navigate into the `frontend` directory and install all workspace dependencies:
@@ -113,7 +127,7 @@ To start the frontends interface, run the following command from the `frontend` 
 npm run dev --workspace apps/machine
 ```
 
-> **Default URL**: http://localhost:5173 (or as displayed in your terminal output)
+> **Default URL**: `http://localhost:5173` (or as displayed in your terminal output)
 
 ##### Start the Service / Management UI (apps/service)
 
@@ -121,7 +135,7 @@ npm run dev --workspace apps/machine
 npm run dev --workspace apps/service
 ```
 
-> **Default URL**: http://localhost:5174 (or as displayed in your terminal output)
+> **Default URL**: `http://localhost:5174` (or as displayed in your terminal output)
 
 ## 🧪 Frontend's Testing
 
@@ -130,6 +144,23 @@ The project includes a complete suite of tests using Jest and the React Testing 
 ```bash
 npm test
 ```
+
+## 🐳 Running with Docker (Zero-dependency setup)
+
+If you don't have PHP, Node.js, or MongoDB installed on your system, you can run the complete stack with Docker:
+
+```bash
+docker compose up --build
+```
+
+Once running, the applications will be available at:
+
+- Machine Frontend: `http://localhost:5173`
+- Service Frontend: `http://localhost:5174`
+- Backend API: `http://localhost:8080/api`
+- Swagger UI: `http://localhost:8080/api/doc`
+
+> **Note**: The backend container automatically runs `php bin/console app:seed-machine` on startup to initialize the MongoDB database if empty.
 
 ## Trade-offs / What I'd improve with more time
 
