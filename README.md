@@ -20,14 +20,9 @@ If you prefer running the applications natively on your host machine:
 
 ## Development environment
 
-This project was developed and tested locally using [Laravel Herd](https://herd.laravel.com/) (PHP/Symfony) and a
-native MongoDB installation on Windows — not Docker.
+This project was developed locally using [Laravel Herd](https://herd.laravel.com/) (PHP/Symfony) and a native MongoDB installation on Windows.
 
-A `Dockerfile` and `docker-compose.yml` are included to make evaluation easier with a single command, as requested
-in the challenge. However, due to virtualization limitations on the development machine, **the Docker setup could
-not be tested end-to-end locally**. The configuration follows standard practices for this stack (PHP-FPM + Nginx,
-Node build + Nginx static serving, MongoDB container) and should work as-is, but please report any issues if you
-run into them when evaluating.
+The complete containerized setup (`Dockerfile` and `docker-compose.yml`) has been fully tested and verified using **GitHub Codespaces**, providing a seamless, zero-dependency Docker experience end-to-end (PHP-FPM + Nginx for the backend API, MongoDB 7, and Node/Nginx static web servers for both frontends).
 
 ## Backend Setup
 
