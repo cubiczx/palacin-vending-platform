@@ -96,7 +96,7 @@ The frontend application for the vending machine is located in the `frontend` di
 
 ### Frontend Setup
 
-Copy environment configurations (first time only):
+Copy environment configurations (optional for standard Docker setup, recommended for custom local dev):
 
 ```bash
 cp frontend/apps/machine/.env.example frontend/apps/machine/.env
