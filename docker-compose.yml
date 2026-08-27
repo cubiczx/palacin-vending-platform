@@ -1,6 +1,7 @@
 services:
   mongo:
     image: mongo:7
+    container_name: vending-mongo
     ports:
       - "27017:27017"
     volumes:
@@ -13,6 +14,7 @@ services:
 
   backend:
     build: ./backend
+    container_name: vending-backend
     environment:
       MONGODB_URL: mongodb://mongo:27017
       MONGODB_DB: vending
@@ -24,23 +26,30 @@ services:
 
   backend-webserver:
     image: nginx:alpine
+    container_name: vending-backend-webserver
     volumes:
       - ./backend:/app
-      - ./docker/nginx-backend.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "8080:80"
     depends_on:
       - backend
 
   frontend-machine:
-    build: ./frontend/apps/machine
+    build:
+      context: ./frontend
+      dockerfile: apps/machine/Dockerfile
+    container_name: vending-frontend-machine
     ports:
       - "5173:80"
     depends_on:
       - backend-webserver
 
   frontend-service:
-    build: ./frontend/apps/service
+    build:
+      context: ./frontend
+      dockerfile: apps/service/Dockerfile
+    container_name: vending-frontend-service
     ports:
       - "5174:80"
     depends_on:
