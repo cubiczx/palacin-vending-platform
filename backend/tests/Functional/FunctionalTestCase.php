@@ -40,7 +40,7 @@ abstract class FunctionalTestCase extends WebTestCase
         $this->documentManager->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
     }
 
-    /** @return array<array-key, mixed> */
+    /** @return array<string, mixed> */
     protected function decodeJson(): array
     {
         $content = $this->client->getResponse()->getContent();
@@ -49,6 +49,7 @@ abstract class FunctionalTestCase extends WebTestCase
         $decoded = json_decode($content, true);
         assert(is_array($decoded));
 
+        /** @var array<string, mixed> $decoded */
         return $decoded;
     }
 
