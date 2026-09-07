@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Infrastructure\Persistence\Mongo;
 
 use App\Domain\Model\ProductSku;
+use App\Domain\Model\VendingMachine;
 use App\Infrastructure\Persistence\Mongo\Document\VendingMachineDocument;
 use App\Infrastructure\Persistence\Mongo\VendingMachineRepository;
 use App\Tests\Support\VendingMachineFixture;
@@ -22,25 +23,27 @@ final class VendingMachineRepositoryTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->dm = self::getContainer()->get(DocumentManager::class);
-        $this->repository = new VendingMachineRepository($this->dm);
 
+        $dm = self::getContainer()->get(DocumentManager::class);
+        assert($dm instanceof DocumentManager);
+        $this->dm = $dm;
+
+        $this->repository = new VendingMachineRepository($this->dm);
         $this->dm->getDocumentCollection(VendingMachineDocument::class)->deleteMany([]);
         $this->dm->clear();
     }
 
     public function testSaveAndFindVendingMachine(): void
     {
-        $machine = VendingMachineFixture::withDefaultCatalog(sodaStock: 2);
-        // If your fixture does not accept IDs, create it like this:
-        $machine = \App\Domain\Model\VendingMachine::create(
+        $seed = VendingMachineFixture::withDefaultCatalog(sodaStock: 2);
+        $machine = VendingMachine::create(
             id: 'integration-test-01',
-            products: $machine->products(),
-            changeInventory: $machine->changeInventory()
+            products: $seed->products(),
+            changeInventory: $seed->changeInventory(),
         );
 
         $this->repository->save($machine);
-        $this->dm->clear(); // You have to read from Mongo, not from memory.
+        $this->dm->clear();
 
         $found = $this->repository->find('integration-test-01');
 
@@ -49,7 +52,7 @@ final class VendingMachineRepositoryTest extends KernelTestCase
         self::assertCount(3, $found->products());
         self::assertSame(
             $machine->changeInventory()->toArray(),
-            $found->changeInventory()->toArray()
+            $found->changeInventory()->toArray(),
         );
     }
 
@@ -64,11 +67,6 @@ final class VendingMachineRepositoryTest extends KernelTestCase
         $this->repository->save($original);
         $this->dm->clear();
 
-        // Two fully independent DocumentManagers (own identity maps), the
-        // way each of two concurrent PHP-FPM requests would have in
-        // production — clear() on a shared $this->dm is NOT enough to
-        // simulate this, since it doesn't stop a later save() from picking
-        // up the other "request"'s already-flushed, already-updated object.
         $dmRequestA = DocumentManager::create($this->dm->getClient(), $this->dm->getConfiguration());
         $dmRequestB = DocumentManager::create($this->dm->getClient(), $this->dm->getConfiguration());
         $repositoryA = new VendingMachineRepository($dmRequestA);
@@ -76,13 +74,15 @@ final class VendingMachineRepositoryTest extends KernelTestCase
 
         $requestA = $repositoryA->find('integration-test-04');
         $requestB = $repositoryB->find('integration-test-04');
+        self::assertNotNull($requestA);
+        self::assertNotNull($requestB);
 
         $requestA->restockProduct(ProductSku::SODA, 3);
-        $repositoryA->save($requestA); // succeeds: DB version 1 -> 2
+        $repositoryA->save($requestA);
 
         $requestB->restockProduct(ProductSku::SODA, 100);
 
         $this->expectException(LockException::class);
-        $repositoryB->save($requestB); // stale version 1 in memory, DB now at 2 -> conflict
+        $repositoryB->save($requestB);
     }
 }
