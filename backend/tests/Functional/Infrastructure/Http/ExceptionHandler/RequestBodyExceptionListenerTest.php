@@ -57,7 +57,7 @@ final class RequestBodyExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 'a']),
+            content: $this->jsonBody(['cents' => 'a']),
         );
 
         $this->assertInvalidRequestBodyResponse();
@@ -71,7 +71,7 @@ final class RequestBodyExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode([]),
+            content: $this->jsonBody([]),
         );
 
         $this->assertInvalidRequestBodyResponse();
