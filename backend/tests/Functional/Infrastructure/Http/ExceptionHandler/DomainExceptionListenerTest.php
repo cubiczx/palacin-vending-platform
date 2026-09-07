@@ -145,7 +145,11 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
 
         $this->client->request('GET', '/api/service/state');
         $serviceBody = $this->decodeJson();
-        $water = current(array_filter($serviceBody['products'], static fn ($p) => $p['sku'] === 'WATER'));
+        /** @var array{products: list<array{sku: string, stock: int}>} $serviceBody */
+        $products = $serviceBody['products'];
+        
+        $water = current(array_filter($products, static fn (array $p) => $p['sku'] === 'WATER'));
+        self::assertIsArray($water);
         self::assertSame(5, $water['stock']);
     }
 
