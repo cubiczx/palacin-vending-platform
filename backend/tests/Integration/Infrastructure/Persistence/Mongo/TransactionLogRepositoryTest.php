@@ -24,7 +24,11 @@ final class TransactionLogRepositoryTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->dm = self::getContainer()->get(DocumentManager::class);
+
+        $dm = self::getContainer()->get(DocumentManager::class);
+        assert($dm instanceof DocumentManager);
+        $this->dm = $dm;
+
         $this->repository = new TransactionLogRepository($this->dm);
 
         $this->dm->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
