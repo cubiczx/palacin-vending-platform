@@ -81,8 +81,8 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
     }
 
     /**
-     * @param array<int, int> $counts
-     * @return array<int, int>
+     * @param array<int|string, int> $counts
+     * @return array<string, int>
      */
     private function toStringKeyed(array $counts): array
     {
@@ -90,22 +90,22 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
         foreach ($counts as $cents => $quantity) {
             $result[(string) $cents] = $quantity;
         }
-
+    
+        /** @var array<string, int> $result */
         return $result;
     }
-
+    
     /**
-     * @param array<string, int> $counts
+     * @param array<int|string, int> $counts
      * @return array<int, int>
      */
     private function fromStringKeyed(array $counts): array
     {
-        /** @var array<int, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(int) $cents] = $quantity;
         }
-
+    
         return $result;
     }
 }
