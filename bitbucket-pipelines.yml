@@ -1,0 +1,110 @@
+image: atlassian/default-image:3
+
+definitions:
+  caches:
+    composer: backend/vendor
+    npm: ~/.npm
+  services:
+    mongo:
+      image: mongo:7
+
+  steps:
+    - step: &backend-unit-tests
+        name: Backend — static analysis & unit tests
+        image: php:8.4-cli-alpine
+        caches:
+          - composer
+        script:
+          - apk add --no-cache $PHPIZE_DEPS autoconf g++ make git unzip
+          - pecl install mongodb-1.21.0 && docker-php-ext-enable mongodb
+          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          - cd backend
+          - composer install --no-interaction --prefer-dist --no-progress
+          - vendor/bin/phpstan analyse --no-progress
+          - vendor/bin/phpunit tests/Unit
+
+    - step: &backend-integration-functional-tests
+        name: Backend — integration & functional tests
+        image: php:8.4-cli-alpine
+        services:
+          - mongo
+        caches:
+          - composer
+        script:
+          - apk add --no-cache $PHPIZE_DEPS autoconf g++ make git unzip
+          - pecl install mongodb-1.21.0 && docker-php-ext-enable mongodb
+          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          - cd backend
+          - composer install --no-interaction --prefer-dist --no-progress
+          - export MONGODB_URL="mongodb://127.0.0.1:27017/vending_test"
+          - vendor/bin/phpunit --group integration
+          - vendor/bin/phpunit --group functional
+
+    - step: &frontend-machine
+        name: Frontend (machine) — lint, test, build
+        image: node:24-alpine
+        caches:
+          - npm
+        script:
+          - cd frontend
+          - npm ci
+          - npm run lint --workspace apps/machine
+          - npm run test --workspace apps/machine
+          - npm run build --workspace apps/machine
+
+    - step: &frontend-service
+        name: Frontend (service) — lint, test, build
+        image: node:24-alpine
+        caches:
+          - npm
+        script:
+          - cd frontend
+          - npm ci
+          - npm run lint --workspace apps/service
+          - npm run test --workspace apps/service
+          - npm run build --workspace apps/service
+
+    - step: &docker-build-validation
+        name: Docker — build image validation
+        size: 2x
+        services:
+          - docker
+        script:
+          - docker build -t vending-backend:ci ./backend
+          - docker build -t vending-frontend-machine:ci -f frontend/apps/machine/Dockerfile frontend
+          - docker build -t vending-frontend-service:ci -f frontend/apps/service/Dockerfile frontend
+
+pipelines:
+  default:
+    - step: *backend-unit-tests
+    - step: *backend-integration-functional-tests
+    - parallel:
+        - step: *frontend-machine
+        - step: *frontend-service
+    - step: *docker-build-validation
+
+  pull-requests:
+    '**':
+      - step: *backend-unit-tests
+      - step: *backend-integration-functional-tests
+      - parallel:
+          - step: *frontend-machine
+          - step: *frontend-service
+
+  # To turn this into real CD (push images to a registry) on the main branch:
+  # branches:
+  #   main:
+  #     - step: *backend-unit-tests
+  #     - step: *backend-integration-functional-tests
+  #     - parallel:
+  #         - step: *frontend-machine
+  #         - step: *frontend-service
+  #     - step:
+  #         name: Build & push images
+  #         services:
+  #           - docker
+  #         script:
+  #           - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  #           - docker build -t myuser/vending-backend:latest ./backend
+  #           - docker push myuser/vending-backend:latest
+  #           # ...repeat for frontend images, using $DOCKERHUB_USERNAME/$DOCKERHUB_PASSWORD as repo secrets
