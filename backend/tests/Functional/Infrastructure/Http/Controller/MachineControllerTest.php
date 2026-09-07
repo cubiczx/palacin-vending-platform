@@ -86,3 +86,158 @@ final class MachineControllerTest extends FunctionalTestCase
 
         self::assertResponseStatusCodeSame(400);
         $body = $this->decodeJson();
+        self::assertSame('INVALID_REQUEST_BODY', $body['error']);
+    }
+
+    public function testInsertingMalformedJsonReturns400(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"cents": a}',
+        );
+
+        self::assertResponseStatusCodeSame(400);
+        $body = $this->decodeJson();
+        self::assertSame('INVALID_REQUEST_BODY', $body['error']);
+    }
+
+    public function testExample1BuySodaWithExactChangeReturnsNoCoins(): void
+    {
+        // 1, 0.25, 0.25, GET-SODA -> SODA
+        $this->seedDefaultMachine();
+
+        foreach ([100, 25, 25] as $cents) {
+            $this->client->request(
+                'POST',
+                '/api/machine/coins',
+                server: ['CONTENT_TYPE' => 'application/json'],
+                content: json_encode(['cents' => $cents]),
+            );
+        }
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
+        self::assertResponseIsSuccessful();
+        $body = $this->decodeJson();
+        self::assertSame('SODA', $body['product']);
+        self::assertSame([], $body['change']['coins']);
+    }
+
+    public function testExample2InsertCoinsThenReturnCoinGivesThemBack(): void
+    {
+        // 0.10, 0.10, RETURN-COIN -> 0.10, 0.10
+        $this->seedDefaultMachine();
+
+        foreach ([10, 10] as $cents) {
+            $this->client->request(
+                'POST',
+                '/api/machine/coins',
+                server: ['CONTENT_TYPE' => 'application/json'],
+                content: json_encode(['cents' => $cents]),
+            );
+        }
+
+        $this->client->request('POST', '/api/machine/return');
+
+        self::assertResponseIsSuccessful();
+        $body = $this->decodeJson();
+        self::assertSame(['0.10' => 2], $body['coins']);
+    }
+
+    public function testExample3BuyWaterWithoutExactChangeReturnsChange(): void
+    {
+        // 1, GET-WATER -> WATER, 0.25, 0.10
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/water');
+
+        self::assertResponseIsSuccessful();
+        $body = $this->decodeJson();
+        self::assertSame('WATER', $body['product']);
+        self::assertSame(['0.25' => 1, '0.10' => 1], $body['change']['coins']);
+    }
+
+    public function testSelectingWithInsufficientFundsReturns402(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 25]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
+        self::assertResponseStatusCodeSame(402);
+        $body = $this->decodeJson();
+        self::assertSame('INSUFFICIENT_FUNDS', $body['error']);
+    }
+
+    public function testSelectingAnOutOfStockProductReturns409(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 0)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+        $this->client->request(
+            'POST',
+            '/api/machine/coins',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['cents' => 100]),
+        );
+
+        $this->client->request('POST', '/api/machine/select/soda');
+
+        self::assertResponseStatusCodeSame(409);
+        $body = $this->decodeJson();
+        self::assertSame('OUT_OF_STOCK', $body['error']);
+    }
+
+    public function testSelectingAProductNotInTheMachinesCatalogReturns404(): void
+    {
+        $this->machines->save(VendingMachine::create(
+            id: 'machine-01',
+            products: [new Product(ProductSku::SODA, 'Soda', Money::fromCents(150), 5)],
+            changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
+        ));
+
+        // WATER is a valid enum case but this machine's catalog only has SODA.
+        $this->client->request('POST', '/api/machine/select/water');
+
+        self::assertResponseStatusCodeSame(404);
+        $body = $this->decodeJson();
+        self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
+    }
+
+    public function testSelectingAnUnrecognizedSkuReturns404(): void
+    {
+        $this->seedDefaultMachine();
+
+        $this->client->request('POST', '/api/machine/select/cola');
+
+        self::assertResponseStatusCodeSame(404);
+        $body = $this->decodeJson();
+        self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
+    }
+}
