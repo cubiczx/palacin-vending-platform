@@ -35,6 +35,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/machine/state');
 
         self::assertResponseIsSuccessful();
+        /** @var array{products: array<mixed>, insertedAmount: float} $body */
         $body = $this->decodeJson();
 
         self::assertCount(3, $body['products']);
@@ -53,6 +54,7 @@ final class MachineControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseIsSuccessful();
+        /** @var array{insertedAmount: float} $body */
         $body = $this->decodeJson();
         self::assertSame(0.25, $body['insertedAmount']);
     }
@@ -69,6 +71,7 @@ final class MachineControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_COIN', $body['error']);
     }
@@ -85,6 +88,7 @@ final class MachineControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_REQUEST_BODY', $body['error']);
     }
@@ -101,6 +105,7 @@ final class MachineControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_REQUEST_BODY', $body['error']);
     }
@@ -121,6 +126,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/soda');
 
         self::assertResponseIsSuccessful();
+        /** @var array{product: string, change: array{coins: array<mixed>}} $body */
         $body = $this->decodeJson();
         self::assertSame('SODA', $body['product']);
         self::assertSame([], $body['change']['coins']);
@@ -142,6 +148,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/return');
 
         self::assertResponseIsSuccessful();
+        /** @var array{coins: array<string, int>} $body */
         $body = $this->decodeJson();
         self::assertSame(['0.10' => 2], $body['coins']);
     }
@@ -160,6 +167,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/water');
 
         self::assertResponseIsSuccessful();
+        /** @var array{product: string, change: array{coins: array<string, int>}} $body */
         $body = $this->decodeJson();
         self::assertSame('WATER', $body['product']);
         self::assertSame(['0.25' => 1, '0.10' => 1], $body['change']['coins']);
@@ -179,6 +187,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/soda');
 
         self::assertResponseStatusCodeSame(402);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INSUFFICIENT_FUNDS', $body['error']);
     }
@@ -207,6 +216,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/soda');
 
         self::assertResponseStatusCodeSame(409);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('OUT_OF_STOCK', $body['error']);
     }
@@ -222,6 +232,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/water');
 
         self::assertResponseStatusCodeSame(404);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
     }
@@ -233,6 +244,7 @@ final class MachineControllerTest extends FunctionalTestCase
         $this->client->request('POST', '/api/machine/select/cola');
 
         self::assertResponseStatusCodeSame(404);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
     }
