@@ -9,13 +9,8 @@ use App\Domain\Model\Money;
 use App\Domain\Model\Product;
 use App\Domain\Model\ProductSku;
 use App\Domain\Model\VendingMachine;
-use App\Domain\Repository\VendingMachineRepositoryInterface;
-use App\Infrastructure\Persistence\Mongo\Document\TransactionLogDocument;
-use App\Infrastructure\Persistence\Mongo\Document\VendingMachineDocument;
-use Doctrine\ODM\MongoDB\DocumentManager;
+use App\Tests\Functional\FunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
  * Consolidates coverage of every domain exception -> HTTP response mapping
@@ -24,29 +19,13 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  * MachineControllerTest and ServiceControllerTest.
  */
 #[Group('functional')]
-final class DomainExceptionListenerTest extends WebTestCase
+final class DomainExceptionListenerTest extends FunctionalTestCase
 {
-    private KernelBrowser $client;
-    private VendingMachineRepositoryInterface $machines;
-    private DocumentManager $documentManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-
-        $container = $this->client->getContainer();
-        $this->machines = $container->get(VendingMachineRepositoryInterface::class);
-        $this->documentManager = $container->get(DocumentManager::class);
-
-        $this->documentManager->getDocumentCollection(VendingMachineDocument::class)->deleteMany([]);
-        $this->documentManager->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
-    }
-
     private function assertDomainErrorResponse(string $expectedErrorCode, int $expectedStatus): void
     {
         self::assertResponseStatusCodeSame($expectedStatus);
 
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertArrayHasKey('error', $body);
         self::assertArrayHasKey('message', $body);
         self::assertSame($expectedErrorCode, $body['error']);
@@ -79,7 +58,6 @@ final class DomainExceptionListenerTest extends WebTestCase
             changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
         ));
 
-        // WATER is a valid enum case but this machine's catalog only has SODA.
         $this->client->request('POST', '/api/machine/select/water');
 
         $this->assertDomainErrorResponse('PRODUCT_NOT_FOUND', 404);
@@ -133,8 +111,6 @@ final class DomainExceptionListenerTest extends WebTestCase
 
     public function testExactChangeUnavailableMapsTo409(): void
     {
-        // Water costs 0.65; paying with a 1 EUR coin requires 0.35 change,
-        // but the machine's change inventory is completely empty.
         $this->machines->save(VendingMachine::create(
             id: 'machine-01',
             products: [new Product(ProductSku::WATER, 'Water', Money::fromCents(65), 5)],
@@ -169,15 +145,12 @@ final class DomainExceptionListenerTest extends WebTestCase
         );
         $this->client->request('POST', '/api/machine/select/water');
 
-        // Verify the customer's money and the machine's stock are untouched
-        // by inspecting state through the public read endpoints, rather than
-        // reaching into the repository directly.
         $this->client->request('GET', '/api/machine/state');
-        $stateBody = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $stateBody = $this->decodeJson();
         self::assertSame(1.0, $stateBody['insertedAmount']);
 
         $this->client->request('GET', '/api/service/state');
-        $serviceBody = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $serviceBody = $this->decodeJson();
         $water = current(array_filter($serviceBody['products'], static fn ($p) => $p['sku'] === 'WATER'));
         self::assertSame(5, $water['stock']);
     }
