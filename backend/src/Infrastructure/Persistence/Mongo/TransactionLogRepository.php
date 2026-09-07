@@ -80,13 +80,10 @@ final readonly class TransactionLogRepository implements TransactionLogRepositor
         );
     }
 
-    /**
-     * @param array<int, int> $counts
-     * @return array<string, int>
-     */
+    /** @param array<int, int> $counts */
+    /** @return array<int, int> */
     private function toStringKeyed(array $counts): array
     {
-        /** @var array<string, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(string) $cents] = $quantity;
