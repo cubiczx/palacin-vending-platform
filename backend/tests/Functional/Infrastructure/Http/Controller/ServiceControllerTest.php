@@ -53,7 +53,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/products/soda/restock',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['quantity' => 10]),
+            content: $this->jsonBody(['quantity' => 10]),
         );
 
         self::assertResponseStatusCodeSame(204);
@@ -72,7 +72,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/products/cola/restock',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['quantity' => 10]),
+            content: $this->jsonBody(['quantity' => 10]),
         );
 
         self::assertResponseStatusCodeSame(404);
@@ -92,7 +92,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/products/water/restock',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['quantity' => 10]),
+            content: $this->jsonBody(['quantity' => 10]),
         );
 
         self::assertResponseStatusCodeSame(404);
@@ -106,7 +106,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'PATCH',
             '/api/service/products/soda/price',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['price' => 1.75]),
+            content: $this->jsonBody(['price' => 1.75]),
         );
 
         self::assertResponseStatusCodeSame(204);
@@ -125,7 +125,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/change',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['counts' => ['5' => 0, '10' => 0, '25' => 0, '100' => 3]]),
+            content: $this->jsonBody(['counts' => ['5' => 0, '10' => 0, '25' => 0, '100' => 3]]),
         );
 
         self::assertResponseStatusCodeSame(204);
@@ -179,7 +179,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/products/soda/restock',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['quantity' => -1]),
+            content: $this->jsonBody(['quantity' => -1]),
         );
 
         self::assertResponseStatusCodeSame(400);
@@ -195,7 +195,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/change',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['counts' => ['25' => -5]]),
+            content: $this->jsonBody(['counts' => ['25' => -5]]),
         );
 
         self::assertResponseStatusCodeSame(400);
@@ -211,7 +211,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'POST',
             '/api/service/change',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['counts' => ['25' => -5]]),
+            content: $this->jsonBody(['counts' => ['25' => -5]]),
         );
 
         $this->client->request('GET', '/api/service/state');
@@ -266,7 +266,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'PATCH',
             '/api/service/products/soda/price',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['price' => -1.5]),
+            content: $this->jsonBody(['price' => -1.5]),
         );
 
         self::assertResponseStatusCodeSame(400);
@@ -282,7 +282,7 @@ final class ServiceControllerTest extends FunctionalTestCase
             'PATCH',
             '/api/service/products/soda/price',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['price' => 0.0]),
+            content: $this->jsonBody(['price' => 0.0]),
         );
 
         self::assertResponseStatusCodeSame(204);
