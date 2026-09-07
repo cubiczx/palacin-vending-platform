@@ -37,10 +37,12 @@ final class ServiceControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/service/state');
 
         self::assertResponseIsSuccessful();
+        /** @var array{products: array<int, array{sku: string, stock: int}>, changeInventory: array{coins: array<string, int>}} $body */
         $body = $this->decodeJson();
 
         self::assertCount(3, $body['products']);
-        $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
+        $soda = current(array_filter($body['products'], static fn (array $p): bool => $p['sku'] === 'SODA'));
+        self::assertIsArray($soda);
         self::assertSame(5, $soda['stock']);
         self::assertSame(20, $body['changeInventory']['coins']['1.00']);
     }
@@ -59,8 +61,10 @@ final class ServiceControllerTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
+        /** @var array{products: array<int, array{sku: string, stock: int}>} $body */
         $body = $this->decodeJson();
-        $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
+        $soda = current(array_filter($body['products'], static fn (array $p): bool => $p['sku'] === 'SODA'));
+        self::assertIsArray($soda);
         self::assertSame(15, $soda['stock']);
     }
 
@@ -76,6 +80,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(404);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
     }
@@ -112,8 +117,10 @@ final class ServiceControllerTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
+        /** @var array{products: array<int, array{sku: string, price: float}>} $body */
         $body = $this->decodeJson();
-        $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
+        $soda = current(array_filter($body['products'], static fn (array $p): bool => $p['sku'] === 'SODA'));
+        self::assertIsArray($soda);
         self::assertSame(1.75, $soda['price']);
     }
 
@@ -131,6 +138,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
+        /** @var array{changeInventory: array{coins: array<string, int>}} $body */
         $body = $this->decodeJson();
         self::assertSame(
             ['0.05' => 0, '0.10' => 0, '0.25' => 0, '1.00' => 3],
@@ -153,6 +161,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/service/transactions');
 
         self::assertResponseIsSuccessful();
+        /** @var array{total: int, items: array<int, array{product: string}>} $body */
         $body = $this->decodeJson();
         self::assertSame(1, $body['total']);
         self::assertCount(1, $body['items']);
@@ -166,6 +175,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/service/transactions');
 
         self::assertResponseIsSuccessful();
+        /** @var array{total: int, items: array<mixed>} $body */
         $body = $this->decodeJson();
         self::assertSame(0, $body['total']);
         self::assertSame([], $body['items']);
@@ -183,6 +193,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_RESTOCK_QUANTITY', $body['error']);
     }
@@ -199,6 +210,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_CHANGE_QUANTITY', $body['error']);
     }
@@ -215,6 +227,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         );
 
         $this->client->request('GET', '/api/service/state');
+        /** @var array{changeInventory: array{coins: array<string, int>}} $body */
         $body = $this->decodeJson();
         self::assertSame(20, $body['changeInventory']['coins']['0.25']);
     }
@@ -226,6 +239,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/service/transactions?product=cola');
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_PRODUCT_FILTER', $body['error']);
     }
@@ -253,6 +267,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         $this->client->request('GET', '/api/service/transactions?product=water');
 
         self::assertResponseIsSuccessful();
+        /** @var array{total: int, items: array<int, array{product: string}>} $body */
         $body = $this->decodeJson();
         self::assertSame(1, $body['total']);
         self::assertSame('WATER', $body['items'][0]['product']);
@@ -270,6 +285,7 @@ final class ServiceControllerTest extends FunctionalTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+        /** @var array{error: string} $body */
         $body = $this->decodeJson();
         self::assertSame('INVALID_PRODUCT_PRICE', $body['error']);
     }
