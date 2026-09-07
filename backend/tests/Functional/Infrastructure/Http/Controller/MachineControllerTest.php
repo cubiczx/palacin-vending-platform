@@ -49,7 +49,7 @@ final class MachineControllerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 25]),
+            content: $this->jsonBody(['cents' => 25]),
         );
 
         self::assertResponseIsSuccessful();
@@ -65,7 +65,7 @@ final class MachineControllerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 2]),
+            content: $this->jsonBody(['cents' => 2]),
         );
 
         self::assertResponseStatusCodeSame(400);
@@ -81,7 +81,7 @@ final class MachineControllerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 'a']),
+            content: $this->jsonBody(['cents' => 'a']),
         );
 
         self::assertResponseStatusCodeSame(400);
@@ -107,7 +107,6 @@ final class MachineControllerTest extends FunctionalTestCase
 
     public function testExample1BuySodaWithExactChangeReturnsNoCoins(): void
     {
-        // 1, 0.25, 0.25, GET-SODA -> SODA
         $this->seedDefaultMachine();
 
         foreach ([100, 25, 25] as $cents) {
@@ -115,7 +114,7 @@ final class MachineControllerTest extends FunctionalTestCase
                 'POST',
                 '/api/machine/coins',
                 server: ['CONTENT_TYPE' => 'application/json'],
-                content: json_encode(['cents' => $cents]),
+                content: $this->jsonBody(['cents' => $cents]),
             );
         }
 
@@ -129,7 +128,6 @@ final class MachineControllerTest extends FunctionalTestCase
 
     public function testExample2InsertCoinsThenReturnCoinGivesThemBack(): void
     {
-        // 0.10, 0.10, RETURN-COIN -> 0.10, 0.10
         $this->seedDefaultMachine();
 
         foreach ([10, 10] as $cents) {
@@ -137,7 +135,7 @@ final class MachineControllerTest extends FunctionalTestCase
                 'POST',
                 '/api/machine/coins',
                 server: ['CONTENT_TYPE' => 'application/json'],
-                content: json_encode(['cents' => $cents]),
+                content: $this->jsonBody(['cents' => $cents]),
             );
         }
 
@@ -150,14 +148,13 @@ final class MachineControllerTest extends FunctionalTestCase
 
     public function testExample3BuyWaterWithoutExactChangeReturnsChange(): void
     {
-        // 1, GET-WATER -> WATER, 0.25, 0.10
         $this->seedDefaultMachine();
 
         $this->client->request(
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
 
         $this->client->request('POST', '/api/machine/select/water');
@@ -176,7 +173,7 @@ final class MachineControllerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 25]),
+            content: $this->jsonBody(['cents' => 25]),
         );
 
         $this->client->request('POST', '/api/machine/select/soda');
@@ -198,13 +195,13 @@ final class MachineControllerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
         $this->client->request(
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
 
         $this->client->request('POST', '/api/machine/select/soda');
@@ -222,7 +219,6 @@ final class MachineControllerTest extends FunctionalTestCase
             changeInventory: ChangeInventory::fromCounts([5 => 20, 10 => 20, 25 => 20, 100 => 20]),
         ));
 
-        // WATER is a valid enum case but this machine's catalog only has SODA.
         $this->client->request('POST', '/api/machine/select/water');
 
         self::assertResponseStatusCodeSame(404);
