@@ -80,13 +80,10 @@ final readonly class VendingMachineRepository implements VendingMachineRepositor
         );
     }
 
-    /**
-     * @param array<int, int> $counts Coin cents => quantity
-     * @return array<string, int>
-     */
+    /** @param array<int, int> $counts */
+    /** @return array<int, int> */
     private function toStringKeyed(array $counts): array
     {
-        /** @var array<string, int> $result */
         $result = [];
         foreach ($counts as $cents => $quantity) {
             $result[(string) $cents] = $quantity;
