@@ -12,12 +12,6 @@ use App\Domain\Model\VendingMachine;
 use App\Tests\Functional\FunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
-/**
- * Consolidates coverage of every domain exception -> HTTP response mapping
- * performed by DomainExceptionListener, so the full mapping table is
- * verified in one place rather than duplicated piecemeal across
- * MachineControllerTest and ServiceControllerTest.
- */
 #[Group('functional')]
 final class DomainExceptionListenerTest extends FunctionalTestCase
 {
@@ -44,7 +38,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 2]),
+            content: $this->jsonBody(['cents' => 2]),
         );
 
         $this->assertDomainErrorResponse('INVALID_COIN', 400);
@@ -75,13 +69,13 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
         $this->client->request(
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
 
         $this->client->request('POST', '/api/machine/select/soda');
@@ -101,7 +95,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 25]),
+            content: $this->jsonBody(['cents' => 25]),
         );
 
         $this->client->request('POST', '/api/machine/select/soda');
@@ -121,7 +115,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
 
         $this->client->request('POST', '/api/machine/select/water');
@@ -141,7 +135,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/machine/coins',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['cents' => 100]),
+            content: $this->jsonBody(['cents' => 100]),
         );
         $this->client->request('POST', '/api/machine/select/water');
 
@@ -167,7 +161,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/service/products/water/restock',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['quantity' => -1]),
+            content: $this->jsonBody(['quantity' => -1]),
         );
 
         $this->assertDomainErrorResponse('INVALID_RESTOCK_QUANTITY', 400);
@@ -185,7 +179,7 @@ final class DomainExceptionListenerTest extends FunctionalTestCase
             'POST',
             '/api/service/change',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['counts' => ['25' => -5]]),
+            content: $this->jsonBody(['counts' => ['25' => -5]]),
         );
 
         $this->assertDomainErrorResponse('INVALID_CHANGE_QUANTITY', 400);
