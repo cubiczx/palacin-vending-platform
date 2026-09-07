@@ -4,5 +4,9 @@ parameters:
         - src
         - tests
     ignoreErrors:
-        - '#Call to function method_exists\(\) with .Symfony\\Component\\Dotenv\\Dotenv. and .bootEnv. will always evaluate to true\.#'
-        - '#Method App\\Kernel::getAllowedEnvs\(\) is unused\.#'
+        -
+            identifier: function.alreadyNarrowedType
+            path: tests/bootstrap.php
+        -
+            identifier: method.unused
+            path: src/Kernel.php
