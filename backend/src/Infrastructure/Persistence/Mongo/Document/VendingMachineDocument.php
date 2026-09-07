@@ -18,7 +18,7 @@ class VendingMachineDocument
 
     /** @var array<int, int> Coin value in cents (as string key) => quantity */
     #[ODM\Field(type: 'raw')]
-    public array $changeInventory = [];
+    public array $changeReturned = [];
 
     /** @var list<int> Coin values in cents, in insertion order */
     #[ODM\Field(type: 'raw')]
