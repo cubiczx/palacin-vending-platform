@@ -162,6 +162,19 @@ Once running, the applications will be available at:
 
 > **Note**: The backend container automatically runs `php bin/console app:seed-machine` on startup to initialize the MongoDB database if empty.
 
+## 🚀 Continuous Integration & Quality Assurance (CI/CD)
+
+The repository includes pre-configured automation pipelines for both **GitHub Actions** and **Bitbucket Pipelines**. Every pull request and push to `main` undergoes automated verification:
+
+- **Static Analysis**: PHPStan configured at **Level 9** (`phpstan.neon`) ensures strict type safety across all Domain, Application, and Infrastructure layers without errors.
+- **Backend Testing**: Runs PHPUnit suites (Unit, Integration with real MongoDB 7 service container, and Functional tests).
+- **Frontend Quality Assurance**: Automated ESLint, Jest unit tests, and production build checks across all React workspace applications (`apps/machine` & `apps/service`).
+- **Container Build Validation**: Validates `docker-compose` setups and builds image layers (`vending-backend`, `vending-frontend-machine`, `vending-frontend-service`) to guarantee deployment consistency.
+
+### Automated Pipelines Included:
+- **GitHub Actions**: `.github/workflows/ci-cd.yml`
+- **Bitbucket Pipelines**: `bitbucket-pipelines.yml`
+
 ## Trade-offs / What I'd improve with more time
 
 - **Product slot position (e.g. "A1") was considered but intentionally left out**: it's purely operator-facing
