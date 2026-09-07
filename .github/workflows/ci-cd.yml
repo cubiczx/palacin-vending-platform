@@ -1,0 +1,153 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    name: Backend (Symfony) — tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongosh --quiet"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, ctype, iconv
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Static analysis (PHPStan)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Run unit tests
+        run: vendor/bin/phpunit tests/Unit
+
+      - name: Run integration tests
+        env:
+          MONGODB_URL: mongodb://127.0.0.1:27017/vending_test
+        run: vendor/bin/phpunit --group integration
+
+      - name: Run functional tests
+        env:
+          MONGODB_URL: mongodb://127.0.0.1:27017/vending_test
+        run: vendor/bin/phpunit --group functional
+
+  frontend-tests:
+    name: Frontend (${{ matrix.app }}) — lint, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [machine, service]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace apps/${{ matrix.app }}
+
+      - name: Run tests
+        run: npm run test --workspace apps/${{ matrix.app }}
+
+      - name: Build
+        run: npm run build --workspace apps/${{ matrix.app }}
+
+  docker-build:
+    name: Docker — build image validation
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate docker-compose configuration
+        run: docker compose config --quiet
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: vending-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build machine frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/apps/machine/Dockerfile
+          push: false
+          tags: vending-frontend-machine:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build service frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/apps/service/Dockerfile
+          push: false
+          tags: vending-frontend-service:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+    # To turn this into real CD (push to a registry), add e.g.:
+    #   - uses: docker/login-action@v3
+    #     with:
+    #       registry: ghcr.io
+    #       username: ${{ github.actor }}
+    #       password: ${{ secrets.GITHUB_TOKEN }}
+    # and set push: true + a real tag (e.g. ghcr.io/<owner>/<repo>-backend:latest)
+    # on each build-push-action step above.
