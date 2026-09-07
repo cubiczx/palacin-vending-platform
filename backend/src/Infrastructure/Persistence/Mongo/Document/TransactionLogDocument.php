@@ -22,7 +22,7 @@ class TransactionLogDocument
     #[ODM\Field(type: 'int')]
     public int $amountInsertedCents;
 
-    /** @var array<string, int> Coin value in cents (as string key) => quantity */
+    /** @var array<int, int> Coin value in cents (as string key) => quantity */
     #[ODM\Field(type: 'raw')]
     public array $changeReturned = [];
 
