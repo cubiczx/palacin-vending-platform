@@ -10,37 +10,13 @@ use App\Domain\Model\Product;
 use App\Domain\Model\ProductSku;
 use App\Domain\Model\TransactionLogEntry;
 use App\Domain\Model\VendingMachine;
-use App\Domain\Repository\TransactionLogRepositoryInterface;
-use App\Domain\Repository\VendingMachineRepositoryInterface;
-use App\Infrastructure\Persistence\Mongo\Document\VendingMachineDocument;
-use App\Infrastructure\Persistence\Mongo\Document\TransactionLogDocument;
+use App\Tests\Functional\FunctionalTestCase;
 use DateTimeImmutable;
-use Doctrine\ODM\MongoDB\DocumentManager;
 use PHPUnit\Framework\Attributes\Group;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 #[Group('functional')]
-final class ServiceControllerTest extends WebTestCase
+final class ServiceControllerTest extends FunctionalTestCase
 {
-    private KernelBrowser $client;
-    private VendingMachineRepositoryInterface $machines;
-    private TransactionLogRepositoryInterface $transactionLogs;
-    private DocumentManager $documentManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-
-        $container = $this->client->getContainer();
-        $this->machines = $container->get(VendingMachineRepositoryInterface::class);
-        $this->transactionLogs = $container->get(TransactionLogRepositoryInterface::class);
-        $this->documentManager = $container->get(DocumentManager::class);
-
-        $this->documentManager->getDocumentCollection(VendingMachineDocument::class)->deleteMany([]);
-        $this->documentManager->getDocumentCollection(TransactionLogDocument::class)->deleteMany([]);
-    }
-
     private function seedDefaultMachine(): void
     {
         $this->machines->save(VendingMachine::create(
@@ -61,7 +37,7 @@ final class ServiceControllerTest extends WebTestCase
         $this->client->request('GET', '/api/service/state');
 
         self::assertResponseIsSuccessful();
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
 
         self::assertCount(3, $body['products']);
         $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
@@ -83,7 +59,7 @@ final class ServiceControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
         self::assertSame(15, $soda['stock']);
     }
@@ -100,7 +76,7 @@ final class ServiceControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(404);
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame('PRODUCT_NOT_FOUND', $body['error']);
     }
 
@@ -136,7 +112,7 @@ final class ServiceControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         $soda = current(array_filter($body['products'], static fn ($p) => $p['sku'] === 'SODA'));
         self::assertSame(1.75, $soda['price']);
     }
@@ -155,7 +131,7 @@ final class ServiceControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(204);
 
         $this->client->request('GET', '/api/service/state');
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame(
             ['0.05' => 0, '0.10' => 0, '0.25' => 0, '1.00' => 3],
             $body['changeInventory']['coins'],
@@ -177,7 +153,7 @@ final class ServiceControllerTest extends WebTestCase
         $this->client->request('GET', '/api/service/transactions');
 
         self::assertResponseIsSuccessful();
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame(1, $body['total']);
         self::assertCount(1, $body['items']);
         self::assertSame('WATER', $body['items'][0]['product']);
@@ -190,12 +166,12 @@ final class ServiceControllerTest extends WebTestCase
         $this->client->request('GET', '/api/service/transactions');
 
         self::assertResponseIsSuccessful();
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame(0, $body['total']);
         self::assertSame([], $body['items']);
     }
 
-        public function testRestockingWithNegativeQuantityReturns400(): void
+    public function testRestockingWithNegativeQuantityReturns400(): void
     {
         $this->seedDefaultMachine();
 
@@ -207,7 +183,7 @@ final class ServiceControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame('INVALID_RESTOCK_QUANTITY', $body['error']);
     }
 
@@ -223,7 +199,7 @@ final class ServiceControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame('INVALID_CHANGE_QUANTITY', $body['error']);
     }
 
@@ -239,7 +215,7 @@ final class ServiceControllerTest extends WebTestCase
         );
 
         $this->client->request('GET', '/api/service/state');
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame(20, $body['changeInventory']['coins']['0.25']);
     }
 
@@ -250,7 +226,7 @@ final class ServiceControllerTest extends WebTestCase
         $this->client->request('GET', '/api/service/transactions?product=cola');
 
         self::assertResponseStatusCodeSame(400);
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame('INVALID_PRODUCT_FILTER', $body['error']);
     }
 
@@ -277,7 +253,7 @@ final class ServiceControllerTest extends WebTestCase
         $this->client->request('GET', '/api/service/transactions?product=water');
 
         self::assertResponseIsSuccessful();
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame(1, $body['total']);
         self::assertSame('WATER', $body['items'][0]['product']);
     }
@@ -294,7 +270,7 @@ final class ServiceControllerTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
-        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $body = $this->decodeJson();
         self::assertSame('INVALID_PRODUCT_PRICE', $body['error']);
     }
 
